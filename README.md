@@ -1,51 +1,47 @@
-# langchain4j Study - AiServices 和监听器示例
+# LangChain4j Agent 设计模式学习项目
 
-这是一个用于学习langchain4j的Spring Boot项目，集成了本地Ollama服务，演示了如何使用LangChain4j的AiServices功能和监听器机制。项目展示了如何通过接口定义AI服务，以及如何使用监听器追踪AI服务的执行过程。
+这是一个用于学习 LangChain4j Agent 设计模式的 Spring Boot 项目，集成了本地 Ollama 服务。项目通过简历生成和优化的实际应用场景，演示了如何使用 LangChain4j 的 Agentic 功能实现不同类型的 Agent 工作流。
 
 **Package**: `com.cnblogs.yjmyzz.langchain4j.study`
 
 ## 🚀 项目特性
 
-- **Java 25**: 使用最新的Java版本
-- **Spring Boot 4.0.0**: 现代化的Spring Boot框架
-- **LangChain4j 1.8.0**: 强大的Java AI框架
-- **Ollama集成**: 支持本地大语言模型和嵌入模型
+- **Java 25**: 使用最新的 Java 版本
+- **Spring Boot 4.0.0**: 现代化的 Spring Boot 框架
+- **LangChain4j 1.10.0**: 强大的 Java AI 框架
+- **LangChain4j Agentic 1.10.0-beta18**: Agent 设计模式支持
+- **Ollama 集成**: 支持本地大语言模型
   - 聊天模型：默认使用 `deepseek-v3.1:671b-cloud`
-  - 嵌入模型：默认使用 `nomic-embed-text:latest`
-- **AiServices**: 使用接口定义AI服务，简化AI应用开发
-- **监听器机制**: 提供完整的监听器支持，追踪AI服务执行过程
-  - **AiService监听器**: 监听AI服务的开始和完成事件
-  - **ChatModel监听器**: 监听聊天模型的请求、响应和错误事件
-- **对话记忆**: 使用 `MessageWindowChatMemory` 管理对话上下文
-- **RESTful API**: 提供AI服务功能演示API接口
+- **Agent 设计模式**: 演示多种 Agent 工作流模式
+  - **基础 Agent**: 单个 Agent 的使用
+  - **顺序工作流**: 多个 Agent 按顺序执行
+  - **循环工作流**: Agent 循环执行直到满足退出条件
+  - **并行工作流**: 多个 Agent 并行执行（目录预留）
 
 ## 📋 前置要求
 
-1. **Java 25**: 确保已安装JDK 25
-2. **Maven 3.6+**: 确保已安装Maven
-3. **Ollama**: 确保已安装并启动Ollama服务
+1. **Java 25**: 确保已安装 JDK 25
+2. **Maven 3.6+**: 确保已安装 Maven
+3. **Ollama**: 确保已安装并启动 Ollama 服务
 
 ## 🛠️ 安装和配置
 
-### 1. 安装Ollama
+### 1. 安装 Ollama
 
-访问 [Ollama官网](https://ollama.ai/) 下载并安装Ollama。
+访问 [Ollama 官网](https://ollama.ai/) 下载并安装 Ollama。
 
-### 2. 启动Ollama服务
+### 2. 启动 Ollama 服务
 
 ```bash
-# 启动Ollama服务
+# 启动 Ollama 服务
 ollama serve
 ```
 
 ### 3. 下载模型
 
 ```bash
-# 下载聊天模型（默认模型，用于AiServices分类）
+# 下载聊天模型（默认模型）
 ollama pull deepseek-v3.1:671b-cloud
-
-# 下载嵌入模型（用于EmbeddingModelTextClassifier分类）
-ollama pull nomic-embed-text:latest
 
 # 或者下载其他模型
 ollama pull qwen3:0.6b
@@ -57,8 +53,8 @@ ollama pull llama2:13b
 ### 4. 克隆项目
 
 ```bash
-git clone https://github.com/yjmyzz/langchain4j-study.git
-cd langchain4j-study
+git clone https://github.com/yjmyzz/agent-design-pattern-with-langchaing4j.git
+cd agent-design-pattern-with-langchaing4j
 ```
 
 ### 5. 编译项目
@@ -73,88 +69,147 @@ mvn clean compile
 mvn spring-boot:run
 ```
 
-## 🌐 使用方式
+## 📚 示例说明
 
-### API接口
+项目包含四个主要示例，演示不同的 Agent 设计模式：
 
-#### AiServices 功能演示
+### 1. 基础 Agent（Basic Agent）
 
-项目使用 `AiServices` 创建AI服务接口，演示如何通过接口定义AI服务。
+**文件位置**: `src/main/java/com/cnblogs/yjmyzz/langchain4j/study/agentic/_1_basic_agent/`
 
-##### 1. 聊天追踪接口
+**示例文件**:
+- `_1a_Basic_Agent_Example.java` - 基础 Agent 示例
+- `_1b_Basic_Agent_Example_Structured.java` - 结构化输出示例
+- `CvGenerator.java` - 简历生成 Agent 接口
+- `CvGeneratorStructuredOutput.java` - 结构化输出简历生成 Agent
 
+**功能说明**:
+- 演示如何创建和使用单个 Agent
+- 将用户的个人简介转换成完整的简历
+- 支持普通文本输出和结构化输出两种方式
+
+**运行示例**:
 ```bash
-# 使用AiServices进行对话（带监听器追踪）
-curl "http://localhost:8080/api/chat/trace?query=你好，我是张三"
+# 运行基础 Agent 示例
+mvn exec:java -Dexec.mainClass="com.cnblogs.yjmyzz.langchain4j.study.agentic._1_basic_agent._1a_Basic_Agent_Example"
 ```
 
-**功能说明**：
-- 使用 `AiServices.builder()` 创建AI服务接口实例
-- 定义 `ChineseTeacher` 接口，使用 `@SystemMessage` 和 `@UserMessage` 注解
-- 支持多轮对话，使用 `MessageWindowChatMemory` 管理对话记忆（最多保留10条消息）
-- 注册监听器追踪AI服务执行过程：
-  - `CustomAiServiceStartedListener`: 监听AI服务开始事件
-  - `CustomAiServiceCompletedListener`: 监听AI服务完成事件
-- 适合需要追踪和监控AI服务执行的场景
+**核心代码**:
+```java
+CvGenerator cvGenerator = AgenticServices
+        .agentBuilder(CvGenerator.class)
+        .chatModel(model)
+        .outputKey("masterCv")
+        .build();
 
-**返回示例**：
-```json
-"你好，张三！很高兴认识你。有什么我可以帮助你的吗？"
+String cv = cvGenerator.generateCv(lifeStory);
 ```
 
-**监听器输出示例**：
-```
-AiServiceStartedEvent: invocationId=xxx, aiServiceInterfaceName=ChineseTeacher, aiServiceMethodName=chat, ...
-AiServiceCompletedListener: invocationId=xxx, result=你好，张三！很高兴认识你...
-```
+### 2. 顺序工作流（Sequential Workflow）
 
-**多轮对话示例**：
+**文件位置**: `src/main/java/com/cnblogs/yjmyzz/langchain4j/study/agentic/_2_sequential_workflow/`
+
+**示例文件**:
+- `_2a_Sequential_Agent_Example.java` - 顺序工作流示例（无类型）
+- `_2b_Sequential_Agent_Example_Typed.java` - 顺序工作流示例（类型化）
+- `CvTailor.java` - 简历优化 Agent 接口
+- `SequenceCvGenerator.java` - 顺序简历生成器接口
+
+**功能说明**:
+- 演示如何将多个 Agent 组合成顺序工作流
+- 第一个 Agent（CvGenerator）生成主简历
+- 第二个 Agent（CvTailor）根据职位描述优化简历
+- 演示如何在 Agent 之间传递参数
+
+**运行示例**:
 ```bash
-# 第一轮对话
-curl "http://localhost:8080/api/chat/trace?query=我的名字是李四"
-# 返回：了解，李四，很高兴认识你...
-
-# 第二轮对话（会记住之前的对话）
-curl "http://localhost:8080/api/chat/trace?query=我刚才说我的名字是什么？"
-# 返回：你刚才说你的名字是李四...
+# 运行顺序工作流示例
+mvn exec:java -Dexec.mainClass="com.cnblogs.yjmyzz.langchain4j.study.agentic._2_sequential_workflow._2a_Sequential_Agent_Example"
 ```
 
-##### 2. 监听器功能说明
+**核心代码**:
+```java
+CvGenerator cvGenerator = AgenticServices
+        .agentBuilder(CvGenerator.class)
+        .chatModel(model)
+        .outputKey("masterCv")
+        .build();
 
-项目提供了三种类型的监听器：
+CvTailor cvTailor = AgenticServices
+        .agentBuilder(CvTailor.class)
+        .chatModel(model)
+        .outputKey("tailoredCv")
+        .build();
 
-**AiService监听器**：
-- `CustomAiServiceStartedListener`: 监听AI服务开始执行
-  - 获取调用上下文信息（invocationId、接口名、方法名等）
-  - 获取系统消息和用户消息
-  - 记录事件时间戳
-- `CustomAiServiceCompletedListener`: 监听AI服务执行完成
-  - 获取调用上下文信息
-  - 获取执行结果
-  - 记录完成时间
+UntypedAgent tailoredCvGenerator = AgenticServices
+        .sequenceBuilder()
+        .subAgents(cvGenerator, cvTailor)
+        .outputKey("tailoredCv")
+        .build();
+```
 
-**ChatModel监听器**：
-- `CustomChatModelListener`: 监听聊天模型的请求、响应和错误
-  - `onRequest`: 监听请求发送，可以查看消息列表和参数
-  - `onResponse`: 监听响应接收，可以查看AI消息和Token使用情况
-  - `onError`: 监听错误发生，可以查看错误详情
+### 3. 循环工作流（Loop Workflow）
 
-**监听器配置**：
-- ChatModel监听器在 `OllamaConfig` 中配置，应用于所有聊天模型调用
-- AiService监听器在创建AiService时注册，仅应用于该服务实例
+**文件位置**: `src/main/java/com/cnblogs/yjmyzz/langchain4j/study/agentic/_3_loop_workflow/`
+
+**示例文件**:
+- `_3a_Loop_Agent_Example.java` - 循环工作流示例
+- `_3a_Loop_Agent_Example_States_And_Fail.java` - 循环工作流示例（带状态和失败处理）
+- `CvReviewer.java` - 简历评审 Agent 接口
+- `ScoredCvTailor.java` - 评分简历优化 Agent 接口
+
+**功能说明**:
+- 演示如何实现循环工作流
+- CvReviewer Agent 评审简历并给出分数和反馈
+- ScoredCvTailor Agent 根据反馈优化简历
+- 循环执行直到分数达到阈值（默认 0.8）或达到最大迭代次数（默认 3 次）
+
+**运行示例**:
+```bash
+# 运行循环工作流示例
+mvn exec:java -Dexec.mainClass="com.cnblogs.yjmyzz.langchain4j.study.agentic._3_loop_workflow._3a_Loop_Agent_Example"
+```
+
+**核心代码**:
+```java
+CvReviewer cvReviewer = AgenticServices.agentBuilder(CvReviewer.class)
+        .chatModel(model)
+        .outputKey("cvReview")
+        .build();
+
+ScoredCvTailor scoredCvTailor = AgenticServices.agentBuilder(ScoredCvTailor.class)
+        .chatModel(model)
+        .outputKey("cv")
+        .build();
+
+UntypedAgent reviewedCvGenerator = AgenticServices
+        .loopBuilder()
+        .subAgents(cvReviewer, scoredCvTailor)
+        .outputKey("cv")
+        .exitCondition(agenticScope -> {
+            CvReview review = (CvReview) agenticScope.readState("cvReview");
+            return review.score > 0.8;
+        })
+        .maxIterations(3)
+        .build();
+```
+
+### 4. 并行工作流（Parallel Workflow）
+
+**文件位置**: `src/main/java/com/cnblogs/yjmyzz/langchain4j/study/agentic/_4_parallel_workflow/`
+
+**状态**: 目录已创建，示例代码待实现
 
 ## ⚙️ 配置说明
 
 项目配置文件位于 `src/main/resources/application.yml`：
 
 ```yaml
-# 服务器配置
 server:
   port: 8080
   servlet:
     context-path: /
 
-# Spring应用配置
 spring:
   application:
     name: langchain4j-study
@@ -162,7 +217,7 @@ spring:
   # 日志配置
   logging:
     level:
-      com.cnblogs.yjmyzz.langchain4j.study: DEBUG
+      com.example.langchain4jstudy: DEBUG
       dev.langchain4j: DEBUG
     pattern:
       console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -170,8 +225,7 @@ spring:
 # Ollama配置
 ollama:
   base-url: http://localhost:11434          # Ollama服务地址
-  model: deepseek-v3.1:671b-cloud           # 聊天模型名称（用于AiServices）
-  embedding-model: nomic-embed-text:latest  # 嵌入模型名称（用于EmbeddingModel）
+  model: deepseek-v3.1:671b-cloud           # 聊天模型名称
   timeout: 60                               # 请求超时时间（秒）
 
 # 应用信息
@@ -179,7 +233,7 @@ info:
   app:
     name: langchain4j Study
     version: 1.0.0
-    description: langchain4j学习项目 - 跟踪Trace示例
+    description: langchain4j学习项目 - Agent设计模式示例
 ```
 
 ## 📁 项目结构
@@ -188,277 +242,232 @@ info:
 src/
 ├── main/
 │   ├── java/com/cnblogs/yjmyzz/langchain4j/study/
-│   │   ├── LongChain4jStudyApplication.java    # 主启动类
+│   │   ├── AgentDesignPatternApplication.java    # 主启动类
+│   │   ├── agentic/
+│   │   │   ├── _1_basic_agent/                   # 基础 Agent 示例
+│   │   │   │   ├── _1a_Basic_Agent_Example.java
+│   │   │   │   ├── _1b_Basic_Agent_Example_Structured.java
+│   │   │   │   ├── CvGenerator.java
+│   │   │   │   └── CvGeneratorStructuredOutput.java
+│   │   │   ├── _2_sequential_workflow/           # 顺序工作流示例
+│   │   │   │   ├── _2a_Sequential_Agent_Example.java
+│   │   │   │   ├── _2b_Sequential_Agent_Example_Typed.java
+│   │   │   │   ├── CvTailor.java
+│   │   │   │   └── SequenceCvGenerator.java
+│   │   │   ├── _3_loop_workflow/                 # 循环工作流示例
+│   │   │   │   ├── _3a_Loop_Agent_Example.java
+│   │   │   │   ├── _3a_Loop_Agent_Example_States_And_Fail.java
+│   │   │   │   ├── CvReviewer.java
+│   │   │   │   └── ScoredCvTailor.java
+│   │   │   └── _4_parallel_workflow/             # 并行工作流示例（待实现）
 │   │   ├── config/
-│   │   │   └── OllamaConfig.java              # Ollama配置类
-│   │   ├── controller/
-│   │   │   └── TraceController.java           # AI服务追踪功能控制器
-│   │   └── listener/
-│   │       ├── CustomAiServiceStartedListener.java    # AI服务开始监听器
-│   │       ├── CustomAiServiceCompletedListener.java # AI服务完成监听器
-│   │       └── CustomChatModelListener.java          # 聊天模型监听器
+│   │   │   └── OllamaConfig.java                  # Ollama 配置类
+│   │   ├── domain/
+│   │   │   ├── Cv.java                           # 简历领域模型
+│   │   │   └── CvReview.java                     # 简历评审领域模型
+│   │   └── util/
+│   │       ├── AgenticScopePrinter.java          # AgenticScope 打印工具
+│   │       └── StringLoader.java                # 资源文件加载工具
 │   └── resources/
-│       ├── application.yml                     # 应用配置
-│       └── data.txt                           # 示例文档（可选）
+│       ├── application.yml                       # 应用配置
+│       └── documents/                            # 示例文档
+│           ├── user_life_story.txt               # 用户个人经历
+│           ├── master_cv.txt                     # 主简历
+│           ├── job_description_backend.txt       # 后端职位描述
+│           └── job_description_fullstack.txt     # 全栈职位描述
 └── test/
     └── java/com/cnblogs/yjmyzz/langchain4j/study/
-        └── LangChain4jStudyApplicationTests.java  # 应用测试
 ```
 
-## 📦 Package结构
+## 📦 Package 结构
 
-项目使用标准的Maven package命名规范：
+项目使用标准的 Maven package 命名规范：
 - **GroupId**: `com.yjmyzz`
-- **ArtifactId**: `langchain4j-study`
+- **ArtifactId**: `agent-design-pattern-with-langchaing4j`
 - **Version**: `1.0.0`
 - **Package**: `com.cnblogs.yjmyzz.langchain4j.study`
-- **主类**: `LongChain4jStudyApplication`
+- **主类**: `AgentDesignPatternApplication`
 
 ## 🔧 核心组件说明
 
 ### 1. 配置类
 
 #### OllamaConfig.java
-- 配置Ollama聊天模型和嵌入模型
+- 配置 Ollama 聊天模型
 - 支持自定义模型名称、服务地址和超时时间
 - 启用请求和响应日志记录
-- 使用 `@Bean` 注解注册为Spring Bean，支持依赖注入
-- Bean名称：
-  - `ollamaChatModel` - 聊天模型（用于ConversationalChain和ConversationalRetrievalChain）
-  - `ollamaEmbeddingModel` - 嵌入模型（用于文档嵌入和RAG检索）
+- 使用 `@Bean` 注解注册为 Spring Bean，支持依赖注入
+- Bean 名称：`ollamaChatModel`
 
-### 2. 控制器
+### 2. Agent 接口
 
-#### TraceController.java
-- 提供AiServices功能演示和监听器追踪
-- 定义 `ChineseTeacher` 接口，演示如何使用 `@SystemMessage` 和 `@UserMessage` 注解
-- 使用 `AiServices.builder()` 创建AI服务实例
-- 提供API接口：
-  - `/api/chat/trace` - 使用AiServices进行对话，带监听器追踪
-- 记忆管理：
-  - 使用 `MessageWindowChatMemory` 管理对话记忆
-  - 最多保留10条消息历史
-- 监听器注册：
-  - 注册 `CustomAiServiceStartedListener` 监听服务开始
-  - 注册 `CustomAiServiceCompletedListener` 监听服务完成
+#### CvGenerator.java
+- 基础 Agent 接口，用于生成简历
+- 使用 `@Agent` 注解定义 Agent 描述
+- 使用 `@UserMessage` 注解定义用户消息模板
+- 使用 `@V` 注解标记变量，用于在 AgenticScope 中传递
 
-### 3. 监听器
+#### CvTailor.java
+- 简历优化 Agent 接口
+- 接收原始简历和优化指令，生成优化后的简历
+- 使用 `@SystemMessage` 定义系统提示词
 
-#### CustomAiServiceStartedListener.java
-- 实现 `AiServiceStartedListener` 接口
-- 监听AI服务开始执行事件
-- 记录调用上下文信息：invocationId、接口名、方法名、参数、时间戳等
-- 记录系统消息和用户消息
+#### CvReviewer.java
+- 简历评审 Agent 接口
+- 接收简历和职位描述，返回评审结果（分数和反馈）
+- 返回结构化对象 `CvReview`
 
-#### CustomAiServiceCompletedListener.java
-- 实现 `AiServiceCompletedListener` 接口
-- 监听AI服务执行完成事件
-- 记录调用上下文信息和执行结果
-- 用于追踪AI服务的执行结果
+#### ScoredCvTailor.java
+- 评分简历优化 Agent 接口
+- 接收简历和评审反馈，生成优化后的简历
 
-#### CustomChatModelListener.java
-- 实现 `ChatModelListener` 接口
-- 监听聊天模型的请求、响应和错误事件
-- `onRequest`: 记录请求消息和参数
-- `onResponse`: 记录响应消息和Token使用情况
-- `onError`: 记录错误信息
-- 支持在请求上下文中设置自定义属性
+### 3. 领域模型
 
-### 4. 主要依赖
-- **Spring Boot Web**: Web应用支持
-- **Spring Boot Validation**: 数据验证支持
-- **Spring WebFlux**: 响应式编程支持
-- **LangChain4j**: AI框架核心（版本 1.8.0）
-- **LangChain4j Ollama**: Ollama集成（包含聊天模型和嵌入模型支持）
+#### Cv.java
+- 简历领域模型
+- 包含技能、专业经历、教育背景等字段
+- 使用 `@Description` 注解描述字段含义
+
+#### CvReview.java
+- 简历评审领域模型
+- 包含分数（0-1）和反馈信息
+
+### 4. 工具类
+
+#### StringLoader.java
+- 从资源文件加载文本内容
+- 支持从 classpath 加载文件
+
+#### AgenticScopePrinter.java
+- 格式化打印 AgenticScope 内容
+- 支持截断长文本，便于调试
+
+### 5. 主要依赖
+
+- **Spring Boot Starter**: Spring Boot 应用支持
+- **LangChain4j**: AI 框架核心（版本 1.10.0）
+- **LangChain4j Agentic**: Agent 设计模式支持（版本 1.10.0-beta18）
+- **LangChain4j Ollama**: Ollama 集成（包含聊天模型支持）
 - **Lombok**: 代码简化工具（可选依赖）
 
-## 🧪 测试
+## 🧪 运行示例
 
-### 运行所有测试
+### 运行基础 Agent 示例
 
 ```bash
-mvn test
+mvn exec:java -Dexec.mainClass="com.cnblogs.yjmyzz.langchain4j.study.agentic._1_basic_agent._1a_Basic_Agent_Example"
 ```
 
-### 运行特定测试
+### 运行顺序工作流示例
 
 ```bash
-mvn test -Dtest=com.cnblogs.yjmyzz.langchain4j.study.LangChain4jStudyApplicationTests
+mvn exec:java -Dexec.mainClass="com.cnblogs.yjmyzz.langchain4j.study.agentic._2_sequential_workflow._2a_Sequential_Agent_Example"
+```
+
+### 运行循环工作流示例
+
+```bash
+mvn exec:java -Dexec.mainClass="com.cnblogs.yjmyzz.langchain4j.study.agentic._3_loop_workflow._3a_Loop_Agent_Example"
 ```
 
 ## 🔧 开发指南
 
-### 添加新的AiService功能
+### 创建新的 Agent
 
-#### 使用AiServices创建AI服务（推荐方式）
+1. 定义 Agent 接口，使用 `@Agent` 注解描述 Agent 功能
+2. 使用 `@SystemMessage` 定义系统提示词（可选）
+3. 使用 `@UserMessage` 定义用户消息模板
+4. 使用 `@V` 注解标记变量，用于在 AgenticScope 中传递
+5. 使用 `AgenticServices.agentBuilder()` 创建 Agent 实例
 
-1. 定义AI服务接口，使用 `@SystemMessage` 和 `@UserMessage` 注解
-2. 注入 `OllamaChatModel`
-3. 使用 `AiServices.builder()` 创建服务实例
-4. 配置聊天模型、记忆管理和监听器
-5. 调用接口方法执行对话
-
-**示例**：
+**示例**:
 ```java
-@Autowired
-@Qualifier("ollamaChatModel")
-OllamaChatModel ollamaChatModel;
-
-// 定义AI服务接口
-interface MyAiService {
-    @SystemMessage("你是一个专业的助手")
-    @UserMessage("请回答：{{it}}")
-    String chat(String query);
+public interface MyAgent {
+    @Agent("描述 Agent 的功能")
+    @SystemMessage("系统提示词")
+    @UserMessage("用户消息模板：{{variable}}")
+    String doSomething(@V("variable") String input);
 }
 
-@GetMapping("/chat")
-public ResponseEntity<String> chat(@RequestParam String query) {
-    try {
-        // 创建AI服务实例
-        MyAiService service = AiServices.builder(MyAiService.class)
-                .chatModel(ollamaChatModel)
-                .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
-                .registerListeners(List.of(
-                    new CustomAiServiceStartedListener(),
-                    new CustomAiServiceCompletedListener()
-                ))
-                .build();
-        
-        // 调用服务方法
-        String response = service.chat(query);
-        return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        return ResponseEntity.ok("错误: " + e.getMessage());
-    }
-}
-```
-
-### 添加自定义监听器
-
-#### 创建AiService监听器
-
-**示例**：
-```java
-public class MyAiServiceStartedListener implements AiServiceStartedListener {
-    @Override
-    public void onEvent(AiServiceStartedEvent event) {
-        InvocationContext context = event.invocationContext();
-        UUID invocationId = context.invocationId();
-        String methodName = context.methodName();
-        // 处理事件...
-    }
-}
-```
-
-#### 创建ChatModel监听器
-
-**示例**：
-```java
-public class MyChatModelListener implements ChatModelListener {
-    @Override
-    public void onRequest(ChatModelRequestContext requestContext) {
-        ChatRequest request = requestContext.chatRequest();
-        // 处理请求...
-    }
-    
-    @Override
-    public void onResponse(ChatModelResponseContext responseContext) {
-        ChatResponse response = responseContext.chatResponse();
-        TokenUsage tokenUsage = response.metadata().tokenUsage();
-        // 处理响应...
-    }
-    
-    @Override
-    public void onError(ChatModelErrorContext errorContext) {
-        Throwable error = errorContext.error();
-        // 处理错误...
-    }
-}
-```
-
-#### 注册监听器
-
-**ChatModel监听器**（在配置类中注册）：
-```java
-@Bean("ollamaChatModel")
-public ChatModel chatModel() {
-    return OllamaChatModel.builder()
-            .baseUrl(ollamaBaseUrl)
-            .modelName(ollamaModel)
-            .listeners(List.of(new CustomChatModelListener()))
-            .build();
-}
-```
-
-**AiService监听器**（在创建服务时注册）：
-```java
-AiServices.builder(MyAiService.class)
-        .chatModel(ollamaChatModel)
-        .registerListeners(List.of(new CustomAiServiceStartedListener()))
+MyAgent agent = AgenticServices
+        .agentBuilder(MyAgent.class)
+        .chatModel(model)
+        .outputKey("result")
         .build();
 ```
 
-### 自定义配置
+### 创建顺序工作流
 
-可以通过修改 `application.yml` 来调整：
-- Ollama服务配置
-    - 服务地址（`ollama.base-url`）
-    - 聊天模型（`ollama.model`，默认：deepseek-v3.1:671b-cloud）
-    - 嵌入模型（`ollama.embedding-model`，默认：nomic-embed-text:latest）
-    - 超时时间（`ollama.timeout`，单位：秒）
-- 日志级别和格式
-- 服务器端口（默认8080）
+使用 `AgenticServices.sequenceBuilder()` 创建顺序工作流：
 
-**注意**:
-- 日志配置中的package路径为 `com.cnblogs.yjmyzz.langchain4j.study`
-- 修改配置后需要重启应用才能生效
-- 确保使用的模型已在Ollama中下载：
-  - 聊天模型：`ollama pull deepseek-v3.1:671b-cloud`
-  - 嵌入模型：`ollama pull nomic-embed-text:latest`
+```java
+UntypedAgent sequence = AgenticServices
+        .sequenceBuilder()
+        .subAgents(agent1, agent2, agent3)
+        .outputKey("finalResult")
+        .build();
+```
+
+### 创建循环工作流
+
+使用 `AgenticServices.loopBuilder()` 创建循环工作流：
+
+```java
+UntypedAgent loop = AgenticServices
+        .loopBuilder()
+        .subAgents(reviewer, optimizer)
+        .outputKey("result")
+        .exitCondition(scope -> {
+            // 定义退出条件
+            return conditionMet;
+        })
+        .maxIterations(5)  // 最大迭代次数，防止无限循环
+        .build();
+```
+
+### AgenticScope 变量传递
+
+- 使用 `@V` 注解标记方法参数，这些参数会自动添加到 AgenticScope
+- 使用 `outputKey` 指定 Agent 的输出变量名
+- 在顺序工作流中，前一个 Agent 的输出可以作为后一个 Agent 的输入
+- 在循环工作流中，每次迭代都会更新 AgenticScope 中的变量
 
 ## 🐛 故障排除
 
 ### 常见问题
 
-1. **Ollama连接失败**
-    - 确保Ollama服务已启动：`ollama serve`
-    - 检查端口11434是否被占用
-    - 验证模型是否已下载：`ollama list`
-    - 确认使用的模型名称正确：
-      - 聊天模型：`deepseek-v3.1:671b-cloud`
-      - 嵌入模型：`nomic-embed-text:latest`
+1. **Ollama 连接失败**
+   - 确保 Ollama 服务已启动：`ollama serve`
+   - 检查端口 11434 是否被占用
+   - 验证模型是否已下载：`ollama list`
+   - 确认使用的模型名称正确：`deepseek-v3.1:671b-cloud`
 
-2. **对话记忆丢失**
-   - 检查 `MessageWindowChatMemory` 的配置
-   - 确保每次请求使用同一个AiService实例（或共享记忆）
-   - 注意：当前实现每次请求都创建新的AiService实例，记忆不会跨请求保持
-   - 如需跨请求记忆，需要实现共享记忆机制或使用单例AiService
+2. **Agent 执行失败**
+   - 检查 Agent 接口定义是否正确
+   - 确保 `@Agent`、`@UserMessage` 等注解使用正确
+   - 验证 `@V` 注解的变量名与 `outputKey` 匹配
+   - 检查输入参数是否正确传递
 
-3. **监听器未触发**
-   - 检查监听器是否正确注册
-   - 验证监听器实现是否正确实现了对应的接口
-   - 确认监听器在正确的时机注册（ChatModel监听器在配置类中，AiService监听器在创建服务时）
+3. **循环工作流无限循环**
+   - 检查退出条件是否正确实现
+   - 确保 `maxIterations` 设置合理
+   - 验证退出条件中的变量名是否正确
 
 4. **模型响应缓慢**
-    - 检查硬件资源（CPU、内存）
-    - 考虑使用更小的模型
-    - 调整超时配置（`ollama.timeout`）
-    - 对于本地模型，考虑使用GPU加速
+   - 检查硬件资源（CPU、内存）
+   - 考虑使用更小的模型
+   - 调整超时配置（`ollama.timeout`）
+   - 对于本地模型，考虑使用 GPU 加速
 
-5. **监听器输出过多**
-    - 监听器会输出详细的调试信息
-    - 可以在生产环境中移除或禁用监听器
-    - 或者修改监听器实现，使用日志框架而不是System.out
+5. **变量传递失败**
+   - 确保 `outputKey` 与下一个 Agent 的输入变量名匹配
+   - 检查 `@V` 注解的变量名是否正确
+   - 在顺序工作流中，确保变量名在 Agent 之间一致
 
-6. **AiService接口定义错误**
-    - 确保接口方法使用 `@UserMessage` 或 `@SystemMessage` 注解
-    - 检查方法参数是否正确
-    - 验证方法返回类型是否支持（String、List等）
-
-8. **Java 25 兼容性**
-    - 项目使用 Java 25，确保已安装 JDK 25
-    - Maven编译器插件设置为Java 25
-    - Lombok为可选依赖，打包时会被排除
+6. **Java 25 兼容性**
+   - 项目使用 Java 25，确保已安装 JDK 25
+   - Maven 编译器插件设置为 Java 25
+   - Lombok 为可选依赖，打包时会被排除
 
 ## 📝 许可证
 
@@ -466,12 +475,12 @@ AiServices.builder(MyAiService.class)
 
 ## 🤝 贡献
 
-欢迎提交Issue和Pull Request来改进这个项目！
+欢迎提交 Issue 和 Pull Request 来改进这个项目！
 
 ## 📞 联系方式
 
 如有问题，请通过以下方式联系：
-- 提交GitHub Issue: https://github.com/yjmyzz/langchain4j-study/issues
+- 提交 GitHub Issue: https://github.com/yjmyzz/agent-design-pattern-with-langchaing4j/issues
 - 作者博客: http://yjmyzz.cnblogs.com
 - 作者: 菩提树下的杨过
 
@@ -480,10 +489,12 @@ AiServices.builder(MyAiService.class)
 感谢 [LangChain4j](https://github.com/langchain4j/langchain4j) 开源项目提供的强大支持！
 
 特别感谢以下官方文档资源：
-- [LangChain4j 中文文档](https://docs.langchain4j.info/) - 为Java应用赋能大模型能力的官方中文指南
+- [LangChain4j 中文文档](https://docs.langchain4j.info/) - 为 Java 应用赋能大模型能力的官方中文指南
 - [LangChain4j 英文文档](https://docs.langchain4j.dev/) - 官方英文文档，提供完整的技术参考
-- [Ollama官网](https://ollama.ai/) - 本地大语言模型运行环境
-- [MCP协议文档](https://modelcontextprotocol.io/) - Model Context Protocol 官方文档
+- [LangChain4j Examples](https://github.com/langchain4j/langchain4j-examples) - 官方示例代码库
+- [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) - Anthropic 构造有效的智能体
+- [[译] AI Workflow & AI Agent：架构、模式与工程建议（Anthropic，2024）](http://arthurchiao.art/blog/build-effective-ai-agent-zh/) - (中文翻译)Anthropic 构造有效的智能体
+- [Ollama 官网](https://ollama.ai/) - 本地大语言模型运行环境
 
 ## ⚠️ 重要说明
 
@@ -492,66 +503,56 @@ AiServices.builder(MyAiService.class)
 项目使用 Java 25 和 Spring Boot 4.0.0 进行开发：
 
 - **Java 25**: 确保已安装 JDK 25
-- **Maven配置**: 编译器源码和目标版本都设置为25
+- **Maven 配置**: 编译器源码和目标版本都设置为 25
 - **Lombok**: 作为可选依赖，打包时会被排除
-- 所有日志记录使用标准的 SLF4J Logger
 
-### AiServices 功能说明
+### Agent 设计模式说明
 
-项目演示了如何使用 LangChain4j 的AiServices功能：
+项目演示了如何使用 LangChain4j 的 Agentic 功能实现不同的 Agent 设计模式：
 
-1. **AiServices**: 通过接口定义AI服务
-   - 使用 `@SystemMessage` 定义系统提示词
-   - 使用 `@UserMessage` 定义用户消息模板
-   - 自动生成AI服务实现，简化开发流程
-   - 支持类型安全的接口调用
+1. **基础 Agent**: 单个 Agent 的使用
+   - 适合简单的单步任务
+   - 如果只有一个 Agent，使用 AiService 会是更好的选择
+   - Agent 只有与其他 Agent 结合使用时才更有用
 
-2. **监听器机制**: 追踪AI服务执行过程
-   - **AiService监听器**: 监听服务开始和完成事件
-     - `AiServiceStartedListener`: 监听服务开始，获取调用上下文
-     - `AiServiceCompletedListener`: 监听服务完成，获取执行结果
-   - **ChatModel监听器**: 监听模型请求、响应和错误
-     - `onRequest`: 监听请求发送，可查看消息和参数
-     - `onResponse`: 监听响应接收，可查看Token使用情况
-     - `onError`: 监听错误发生，可查看错误详情
+2. **顺序工作流**: 多个 Agent 按顺序执行
+   - 适合需要多步骤处理的任务
+   - 前一个 Agent 的输出作为后一个 Agent 的输入
+   - 使用 `sequenceBuilder()` 创建
 
-3. **对话记忆管理**:
-   - 使用 `MessageWindowChatMemory` 管理对话上下文
-   - 自动维护多轮对话历史
-   - 可配置记忆窗口大小（默认10条消息）
+3. **循环工作流**: Agent 循环执行直到满足退出条件
+   - 适合需要迭代优化的任务
+   - 可以设置退出条件和最大迭代次数
+   - 使用 `loopBuilder()` 创建
 
-4. **应用场景**:
-   - 智能客服对话系统
-   - 多轮对话应用
-   - AI服务监控和追踪
-   - 性能分析和调试
-   - 企业AI应用开发
-
-5. **优势**:
-   - 接口定义：通过接口定义AI服务，类型安全
-   - 简化开发：无需手动处理消息构建和模型调用
-   - 监听追踪：完整的监听器机制，便于监控和调试
-   - 灵活配置：支持自定义记忆、监听器等组件
-   - 易于测试：接口定义便于单元测试
+4. **并行工作流**: 多个 Agent 并行执行
+   - 适合可以并行处理的任务
+   - 目录已创建，示例代码待实现
 
 ### 技术架构
 
-- **Spring Boot**: 提供Web服务和依赖注入
-- **LangChain4j**: 提供AI集成能力
-  - `AiServices`: AI服务接口生成器，通过接口定义AI服务
-  - `@SystemMessage`: 系统消息注解，定义系统提示词
-  - `@UserMessage`: 用户消息注解，定义用户消息模板
-  - `MessageWindowChatMemory`: 对话记忆管理
+- **Spring Boot**: 提供应用框架和依赖注入
+- **LangChain4j**: 提供 AI 集成能力
+  - `AgenticServices`: Agent 服务构建器
+  - `@Agent`: Agent 描述注解
+  - `@SystemMessage`: 系统消息注解
+  - `@UserMessage`: 用户消息注解
+  - `@V`: 变量注解，用于标记 AgenticScope 中的变量
+  - `AgenticScope`: Agent 执行上下文，用于在 Agent 之间传递数据
   - `OllamaChatModel`: 聊天模型接口
-  - `OllamaEmbeddingModel`: 嵌入模型接口
-  - `AiServiceStartedListener`: AI服务开始监听器接口
-  - `AiServiceCompletedListener`: AI服务完成监听器接口
-  - `ChatModelListener`: 聊天模型监听器接口
-- **Ollama**: 提供本地大语言模型和嵌入模型服务
+- **Ollama**: 提供本地大语言模型服务
+
+### 应用场景
+
+- 简历生成和优化系统
+- 多步骤 AI 任务处理
+- 迭代优化任务
+- 复杂的 AI 工作流编排
 
 ---
 
 **注意**: 
-- 请确保在使用前已正确安装和配置Ollama服务，并下载所需的模型
-- 当前实现每次请求都创建新的AiService实例，对话记忆不会跨请求保持（如需跨请求记忆，需要实现共享记忆机制或使用单例AiService）
-- 监听器会输出详细的调试信息，生产环境建议使用日志框架替代System.out
+- 请确保在使用前已正确安装和配置 Ollama 服务，并下载所需的模型
+- Agent 执行可能需要较长时间，特别是生成长文本时
+- 循环工作流设置了最大迭代次数以防止无限循环
+- 项目中的示例文档位于 `src/main/resources/documents/` 目录

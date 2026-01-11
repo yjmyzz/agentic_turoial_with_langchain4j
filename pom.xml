@@ -16,6 +16,10 @@
     <version>1.0.0</version>
     <name>langchain4j-study</name>
     <description>Agent设计模式(基于langchain4j实现) by 菩提树下的杨过</description>
+<!--    参考文章：-->
+<!--    https://www.anthropic.com/engineering/building-effective-agents-->
+<!--    http://arthurchiao.art/blog/build-effective-ai-agent-zh/-->
+<!--    https://docs.langchain4j.dev/tutorials/agents/-->
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
