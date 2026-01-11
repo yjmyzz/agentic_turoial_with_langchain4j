@@ -1,0 +1,23 @@
+约翰·道 – 后端工程师  
+邮箱：john.doe.dev@protonmail.com | 地点：比利时安特卫普 |
+
+**个人简介**  
+拥有4年以上使用Java（Spring Boot）和PostgreSQL构建应用程序经验的后端工程师。专注于在小型团队中务实交付和协作。
+
+**工作经历**  
+软件工程师 – BrightPay 系统公司（2021年至今）  
+- 使用Java和PostgreSQL构建后端服务。  
+- 开发支持运营的内部工具。  
+- 与团队成员协作维护现有系统。
+
+软件开发员 – CodeWave 解决方案公司（2019–2021年）  
+- 为客户项目进行Java/Spring Boot开发。  
+- 参与小型Web功能和自动化脚本的开发。  
+- 构建探索新技术的兴趣应用程序，并使用Docker。
+
+**教育背景**  
+- Java 训练营，BeCode（2019–2020年）  
+- 机械工程学士，鲁汶大学（2016年）
+
+**技能**  
+Java、Spring Boot、PostgreSQL、Docker、SQL、软件交付、团队协作、英语（C1级）。

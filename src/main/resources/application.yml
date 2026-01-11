@@ -1,0 +1,32 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: langchain4j-study
+  
+  # 日志配置
+  logging:
+    level:
+      com.example.langchain4jstudy: DEBUG
+      dev.langchain4j: DEBUG
+    pattern:
+      console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Ollama配置
+ollama:
+  base-url: http://localhost:11434
+  model: deepseek-v3.1:671b-cloud
+  embedding-model: nomic-embed-text:latest
+  timeout: 60
+
+
+
+# 应用信息
+info:
+  app:
+    name: langchain4j Study
+    version: 1.0.0
+    description: langchain4j学习项目 - 跟踪Trace示例
