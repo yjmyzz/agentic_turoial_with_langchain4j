@@ -5,6 +5,9 @@ import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
+/**
+ * 简历优化器
+ */
 public interface CvTailor {
 
     @Agent("根据特定要求优化简历")

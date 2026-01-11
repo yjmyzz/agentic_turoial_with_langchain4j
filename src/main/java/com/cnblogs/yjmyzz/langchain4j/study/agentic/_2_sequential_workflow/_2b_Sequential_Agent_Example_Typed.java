@@ -51,16 +51,6 @@ public class _2b_Sequential_Agent_Example_Typed {
                 .outputKey("tailoredCv")
                 .build();
 
-        UntypedAgent tailoredCvGenerator = AgenticServices
-                .sequenceBuilder()
-                // 可以包含任意多个代理，顺序很重要
-                .subAgents(cvGenerator, cvTailor)
-                // 这是合成Agent的最终输出
-                // 注意：可以使用 AgenticScope 中的任何字段作为输出
-                // 例如，可以输出 'masterCv' 而不是 tailoredCv（尽管在本例中没有意义）
-                .outputKey("tailoredCv")
-                .build();
-
         // 从 resources/documents/ 目录下的文本文件加载参数
         // - user_life_story.txt
         // - job_description_backend.txt
@@ -83,21 +73,21 @@ public class _2b_Sequential_Agent_Example_Typed {
                 .build();
 
         // 调用类型化的组合 agent
-        ResultWithAgenticScope<Map<String,String>> bothCvsAndScope = sequenceCvGenerator.generateTailoredCv(lifeStory, instructions);
+        ResultWithAgenticScope<Map<String, String>> bothCvsAndScope = sequenceCvGenerator.generateTailoredCv(lifeStory, instructions);
 
         // 提取结果和 agenticScope
         AgenticScope agenticScope = bothCvsAndScope.agenticScope();
-        Map<String,String> bothCvsAndLifeStory = bothCvsAndScope.result();
+        Map<String, String> bothCvsAndLifeStory = bothCvsAndScope.result();
 
         System.out.println("=== 用户信息（输入） ===");
         String userStory = bothCvsAndLifeStory.get("lifeStory");
-        System.out.println(userStory.length() > 100 ? userStory.substring(0, 300) + " [truncated...]" : lifeStory);
+        System.out.println(lifeStory);
         System.out.println("=== 原始简历（结构化）（中间变量） ===");
         String masterCv = bothCvsAndLifeStory.get("masterCv");
-        System.out.println(masterCv.length() > 100 ? masterCv.substring(0, 300) + " [truncated...]" : masterCv);
+        System.out.println(masterCv);
         System.out.println("=== 定制简历（结构化）（输出） ===");
         String tailoredCv = bothCvsAndLifeStory.get("tailoredCv");
-        System.out.println(tailoredCv.length() > 100 ? tailoredCv.substring(0, 300) + " [truncated...]" : tailoredCv);
+        System.out.println(tailoredCv);
 
         // 非结构化和结构化的 agent 会给出相同的定制简历结果
         // （如果有差异，也是源于 LLM 自身的非幂等性）
