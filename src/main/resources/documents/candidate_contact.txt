@@ -1,0 +1,5 @@
+候选人联系卡片：
+姓名：John Doe
+地址：Rue des Carmes 12, 2000 Antwerp, Belgium（比利时安特卫普）
+邮箱：john.doe.dev@protonmail.com
+电话：+32 495 67 89 23

@@ -1,0 +1,17 @@
+约翰·多伊 – 后端工程师
+安特卫普，比利时 | john.doe.dev@protonmail.com | +32 495 67 89 23 | 领英 | GitHub
+
+简介
+拥有4年以上经验的后端工程师（Java, Spring Boot, PostgreSQL），专注于可扩展系统、API现代化和自动化。荷兰语流利，英语C1水平。
+
+工作经历
+BrightPay Systems（2021年至今）：构建后端服务；开发定价工具（报价时间缩短35%）；完成SOAP到REST的API迁移；指导实习生。
+CodeWave Solutions（2019–2021年）：后端开发；建立CI/CD流程（GitHub Actions）；使用Docker、Kafka（概念验证）；开发小型React管理界面；参与个人项目（Spring+Vue预算应用，物联网自动化）。
+
+教育背景
+Java 编程训练营，BeCode（2019–2020年）
+机械工程学士，鲁汶大学（2016年）
+
+技能
+技术：Java，Spring Boot，PostgreSQL，Docker，Kafka（基础），CI/CD，REST设计，整洁代码，指导新人
+语言：荷兰语（母语），英语（C1），法语（B1）
