@@ -8,6 +8,7 @@ import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
@@ -22,7 +23,9 @@ import java.util.Map;
  * 这将允许检查是否获得了良好的分数以及提交此简历是否值得。
  * 此外，还展示了一种技巧来检查审阅的中间状态（每次循环都会被覆盖）：
  * 通过在每次检查退出条件时（即每次智能体调用后）将其存储在列表中。
+ * by 菩提树下的杨过(yjmyzz.cnblogs.com)
  */
+@SpringBootApplication
 public class _3a_Loop_Agent_Example_States_And_Fail {
 
     public static void main(String[] args) throws IOException {

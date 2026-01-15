@@ -8,6 +8,7 @@ import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
@@ -19,7 +20,9 @@ import java.util.Map;
  * 在这个示例中：
  * - 条件1：如果HR评审良好，将简历传递给经理进行评审
  * - 条件2：如果HR评审显示缺少信息，则联系候选人获取更多信息
+ * by 菩提树下的杨过(yjmyzz.cnblogs.com)
  */
+@SpringBootApplication
 public class _5b_Conditional_Workflow_Example_Async {
 
     public static void main(String[] args) throws IOException {

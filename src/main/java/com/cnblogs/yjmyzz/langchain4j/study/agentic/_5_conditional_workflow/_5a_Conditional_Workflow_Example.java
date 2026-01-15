@@ -7,6 +7,7 @@ import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 
@@ -18,7 +19,9 @@ import java.util.Map;
  * 基于评分和候选人资料，我们将执行以下操作之一：
  * - 调用一个智能体，为该候选人的现场面试做好一切准备
  * - 调用一个智能体，发送一封友好的邮件，告知我们不会推进该候选人的申请*
+ * by 菩提树下的杨过(yjmyzz.cnblogs.com)
  */
+@SpringBootApplication
 public class _5a_Conditional_Workflow_Example {
 
     public static void main(String[] args) throws IOException {

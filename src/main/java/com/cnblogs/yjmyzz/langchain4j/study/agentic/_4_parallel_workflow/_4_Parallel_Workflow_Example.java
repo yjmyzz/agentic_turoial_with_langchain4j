@@ -7,6 +7,7 @@ import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 
@@ -23,7 +24,9 @@ import java.util.concurrent.Executors;
  *      输入：简历
  * - HrCvReviewer（从HR角度检查候选人是否符合要求）
  *      输入：简历、HR要求
+ * by 菩提树下的杨过(yjmyzz.cnblogs.com)
  */
+@SpringBootApplication
 public class _4_Parallel_Workflow_Example {
 
     public static void main(String[] args) throws IOException {

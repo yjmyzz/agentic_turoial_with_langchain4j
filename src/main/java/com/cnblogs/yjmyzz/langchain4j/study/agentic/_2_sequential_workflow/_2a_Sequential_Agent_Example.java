@@ -7,6 +7,7 @@ import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
@@ -19,7 +20,9 @@ import java.util.Map;
  * - CvTailor（接收原始简历并根据特定指令（职位描述、反馈等）进行定制）
  * 然后使用 sequenceBuilder 按顺序工作流依次调用它们，
  * 并演示如何在它们之间传递参数。
+ * by 菩提树下的杨过（yjmyzz.cnblogs.com)
  */
+@SpringBootApplication
 public class _2a_Sequential_Agent_Example {
 
     public static void main(String[] args) throws IOException {

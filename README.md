@@ -13,12 +13,16 @@
 - **Ollama集成**: 支持本地大语言模型和嵌入模型
   - 聊天模型：默认使用 `deepseek-v3.1:671b-cloud`
   - 嵌入模型：默认使用 `nomic-embed-text:latest`
-- **5种Agent工作流模式**: 完整演示Agent设计模式的各种应用场景
+- **9种Agent工作流模式**: 完整演示Agent设计模式的各种应用场景
   - 基础Agent（Basic Agent）
   - 顺序工作流（Sequential Workflow）
   - 循环工作流（Loop Workflow）
   - 并行工作流（Parallel Workflow）
   - 条件工作流（Conditional Workflow）
+  - 组合工作流（Composed Workflow）
+  - 监督者编排（Supervisor Orchestration）
+  - 非AI智能体（Non-AI Agents）
+  - 人工参与循环交互（Human in the Loop）
 
 ## 📋 前置要求
 
@@ -220,6 +224,154 @@ UntypedAgent candidateResponder = AgenticServices
     .build();
 ```
 
+### 6. 组合工作流（Composed Workflow）
+
+**示例文件**: `_6_Composed_Workflow_Example.java`
+
+演示如何将多个工作流组合成更大的复合工作流，实现复杂业务流程编排。
+
+**功能**: 
+- `CandidateWorkflow`: 候选人工作流（生成简历 → 评审 → 改进循环）
+- `HiringTeamWorkflow`: 招聘团队工作流（并行评审 → 条件决策）
+
+**关键特性**:
+- 任何Agent（单任务、顺序、并行、循环等）都可以作为子Agent使用
+- 支持多层嵌套组合
+- 可以在任何层级混合不同类型的工作流
+- 所有Agent共享同一个AgenticScope
+
+**运行示例**:
+```java
+// 创建循环工作流
+UntypedAgent cvImprovementLoop = AgenticServices
+    .loopBuilder()
+    .subAgents(scoredCvTailor, cvReviewer)
+    .outputKey("cv")
+    .exitCondition(scope -> {
+        CvReview review = (CvReview) scope.readState("cvReview");
+        return review.score >= 0.8;
+    })
+    .maxIterations(3)
+    .build();
+
+// 将循环工作流组合到顺序工作流中
+CandidateWorkflow candidateWorkflow = AgenticServices
+    .sequenceBuilder(CandidateWorkflow.class)
+    .subAgents(cvGenerator, cvReviewer, cvImprovementLoop)
+    .outputKey("cv")
+    .build();
+```
+
+### 7. 监督者编排（Supervisor Orchestration）
+
+**示例文件**: `_7a_Supervisor_Orchestration.java`
+
+演示如何构建监督者智能体，动态决定调用哪些子智能体以及调用顺序。
+
+**功能**: 监督者协调招聘工作流，动态决定执行HR评审、经理评审、团队评审，然后安排面试或发送拒绝邮件
+
+**关键特性**:
+- 使用 `supervisorBuilder()` 创建监督者智能体
+- 监督者根据上下文动态选择子智能体
+- 支持上下文生成策略和响应策略
+- 监督者一次调用一个智能体（不支持并行）
+- 可以像其他工作流一样用于组合
+
+**运行示例**:
+```java
+SupervisorAgent hiringSupervisor = AgenticServices.supervisorBuilder()
+    .chatModel(model)
+    .subAgents(hrReviewer, managerReviewer, teamReviewer, 
+               interviewOrganizer, emailAssistant)
+    .contextGenerationStrategy(SupervisorContextStrategy.CHAT_MEMORY_AND_SUMMARIZATION)
+    .responseStrategy(SupervisorResponseStrategy.SUMMARY)
+    .supervisorContext("始终使用所有可用的评审者...")
+    .build();
+
+String result = (String) hiringSupervisor.invoke("评估以下候选人：...");
+```
+
+### 8. 非AI智能体（Non-AI Agents）
+
+**示例文件**: `_8_Non_AI_Agents.java`
+
+演示如何在工作流中使用非AI智能体（普通Java操作符），用于确定性操作。
+
+**功能**: 
+- `ScoreAggregator`: 聚合多个评审结果（确定性计算）
+- `StatusUpdate`: 更新申请状态（确定性操作）
+
+**关键特性**:
+- 非AI智能体是普通Java方法，使用 `@Agent` 注解标记
+- 适合确定性操作：计算、数据转换、聚合等
+- 比AI智能体更快、更准确、更经济
+- 可以与其他类型的智能体互换使用
+- 使用 `AgenticServices.agentAction()` 创建内联非AI智能体
+
+**运行示例**:
+```java
+// 非AI智能体类
+public class ScoreAggregator {
+    @Agent(description = "聚合评审结果", outputKey = "combinedCvReview")
+    public CvReview aggregate(@V("hrReview") CvReview hr, ...) {
+        // 确定性计算
+        double avgScore = (hr.score + mgr.score + team.score) / 3.0;
+        return new CvReview(avgScore, combinedFeedback);
+    }
+}
+
+// 在工作流中使用
+UntypedAgent workflow = AgenticServices
+    .sequenceBuilder()
+    .subAgents(
+        parallelReviewWorkflow,
+        new ScoreAggregator(), // 非AI智能体
+        new StatusUpdate(),
+        AgenticServices.agentAction(scope -> {
+            // 内联非AI智能体
+            CvReview review = (CvReview) scope.readState("combinedCvReview");
+            scope.writeState("scoreAsPercentage", review.score * 100);
+        })
+    )
+    .build();
+```
+
+### 9. 人工参与循环交互（Human in the Loop）
+
+**示例文件**: `_9a_HumanInTheLoop_Simple_Validator.java`
+
+演示如何在工作流中集成人工验证环节，实现人机协作。
+
+**功能**: AI提出招聘决策建议，人工验证并做出最终决定
+
+**关键特性**:
+- 使用 `humanInTheLoopBuilder()` 创建人工验证环节
+- 支持自定义请求写入器和响应读取器
+- 可以集成到任何工作流中
+- 适合需要人工审核、验证或决策的场景
+- 建议使用异步智能体避免阻塞
+
+**运行示例**:
+```java
+HumanInTheLoop humanValidator = AgenticServices.humanInTheLoopBuilder()
+    .description("验证模型提出的招聘决策")
+    .inputKey("modelDecision")
+    .outputKey("finalDecision")
+    .requestWriter(request -> {
+        System.out.println("AI招聘助手建议: " + request);
+        System.out.println("请确认最终决定。");
+        System.out.print("> ");
+    })
+    .responseReader(() -> new Scanner(System.in).nextLine())
+    .build();
+
+UntypedAgent workflow = AgenticServices
+    .sequenceBuilder()
+    .subAgents(decisionProposer, humanValidator)
+    .outputKey("finalDecision")
+    .build();
+```
+
 ## 📁 项目结构
 
 ```
@@ -250,14 +402,33 @@ src/
 │   │   │   │   ├── HrCvReviewer.java
 │   │   │   │   ├── ManagerCvReviewer.java
 │   │   │   │   └── TeamMemberCvReviewer.java
-│   │   │   └── _5_conditional_workflow/        # 条件工作流示例
-│   │   │       ├── _5a_Conditional_Workflow_Example.java
-│   │   │       ├── _5b_Conditional_Workflow_Example_Async.java
-│   │   │       ├── EmailAssistant.java
-│   │   │       ├── InfoRequester.java
-│   │   │       ├── InterviewOrganizer.java
-│   │   │       ├── OrganizingTools.java
-│   │   │       └── RagProvider.java
+│   │   │   ├── _5_conditional_workflow/        # 条件工作流示例
+│   │   │   │   ├── _5a_Conditional_Workflow_Example.java
+│   │   │   │   ├── _5b_Conditional_Workflow_Example_Async.java
+│   │   │   │   ├── EmailAssistant.java
+│   │   │   │   ├── InfoRequester.java
+│   │   │   │   ├── InterviewOrganizer.java
+│   │   │   │   ├── OrganizingTools.java
+│   │   │   │   └── RagProvider.java
+│   │   │   ├── _6_composed_workflow/          # 组合工作流示例
+│   │   │   │   ├── _6_Composed_Workflow_Example.java
+│   │   │   │   ├── CandidateWorkflow.java
+│   │   │   │   ├── CvImprovementLoop.java
+│   │   │   │   └── HiringTeamWorkflow.java
+│   │   │   ├── _7_supervisor_orchestration/   # 监督者编排示例
+│   │   │   │   ├── _7a_Supervisor_Orchestration.java
+│   │   │   │   ├── _7b_Supervisor_Orchestration_Advanced.java
+│   │   │   │   └── HiringSupervisor.java
+│   │   │   ├── _8_non_ai_agents/             # 非AI智能体示例
+│   │   │   │   ├── _8_Non_AI_Agents.java
+│   │   │   │   ├── ScoreAggregator.java
+│   │   │   │   └── StatusUpdate.java
+│   │   │   └── _9_human_in_the_loop/         # 人在回路示例
+│   │   │       ├── _9a_HumanInTheLoop_Simple_Validator.java
+│   │   │       ├── _9b_HumanInTheLoop_Chatbot_With_Memory.java
+│   │   │       ├── DecisionsReachedService.java
+│   │   │       ├── HiringDecisionProposer.java
+│   │   │       └── MeetingProposer.java
 │   │   ├── domain/
 │   │   │   ├── Cv.java                          # 简历领域模型
 │   │   │   └── CvReview.java                    # 简历评审领域模型
@@ -399,6 +570,30 @@ java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._4_parallel
 java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow._5a_Conditional_Workflow_Example
 ```
 
+### 运行组合工作流示例
+
+```bash
+java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._6_composed_workflow._6_Composed_Workflow_Example
+```
+
+### 运行监督者编排示例
+
+```bash
+java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._7_supervisor_orchestration._7a_Supervisor_Orchestration
+```
+
+### 运行非AI智能体示例
+
+```bash
+java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._8_non_ai_agents._8_Non_AI_Agents
+```
+
+### 运行人在回路示例
+
+```bash
+java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._9_human_in_the_loop._9a_HumanInTheLoop_Simple_Validator
+```
+
 ## 🔧 开发指南
 
 ### 创建新的Agent
@@ -484,6 +679,67 @@ UntypedAgent conditional = AgenticServices
     .build();
 ```
 
+#### 组合工作流
+```java
+// 将多个工作流组合成复合工作流
+UntypedAgent loop = AgenticServices.loopBuilder()...build();
+UntypedAgent parallel = AgenticServices.parallelBuilder()...build();
+
+MyWorkflow composite = AgenticServices
+    .sequenceBuilder(MyWorkflow.class)
+    .subAgents(agent1, loop, parallel, agent2)
+    .outputKey("result")
+    .build();
+```
+
+#### 监督者编排
+```java
+SupervisorAgent supervisor = AgenticServices.supervisorBuilder()
+    .chatModel(model)
+    .subAgents(agent1, agent2, agent3)
+    .contextGenerationStrategy(SupervisorContextStrategy.CHAT_MEMORY_AND_SUMMARIZATION)
+    .responseStrategy(SupervisorResponseStrategy.SUMMARY)
+    .supervisorContext("监督者行为描述...")
+    .build();
+
+String result = (String) supervisor.invoke("自然语言请求");
+```
+
+#### 非AI智能体
+```java
+// 方式1: 使用类方法
+public class MyNonAIAgent {
+    @Agent(description = "描述", outputKey = "result")
+    public String process(@V("input") String input) {
+        // 确定性操作
+        return result;
+    }
+}
+
+// 方式2: 使用内联操作
+AgenticServices.agentAction(scope -> {
+    // 操作AgenticScope
+    scope.writeState("key", value);
+})
+```
+
+#### 人在回路
+```java
+HumanInTheLoop humanValidator = AgenticServices.humanInTheLoopBuilder()
+    .description("描述人工验证环节")
+    .inputKey("inputKey")
+    .outputKey("outputKey")
+    .requestWriter(request -> {
+        // 向用户展示请求
+        System.out.println(request);
+    })
+    .responseReader(() -> {
+        // 读取用户响应
+        return new Scanner(System.in).nextLine();
+    })
+    .build();
+```
+
 ### 使用工具（Tools）
 
 Agent可以使用工具扩展功能：
@@ -546,13 +802,33 @@ MyAgent agent = AgenticServices
    - 确认AgenticScope中的状态键名正确
    - 验证条件判断逻辑
 
-6. **模型响应缓慢**
+6. **组合工作流状态冲突**
+   - 确保不同层级的Agent使用不同的状态键名
+   - 避免在共享AgenticScope中意外覆盖数据
+   - 仔细设计输入、中间和输出参数的名称
+
+7. **监督者编排执行缓慢**
+   - 监督者一次调用一个智能体，无法并行
+   - 考虑使用更快的推理模型
+   - 优化监督者上下文策略
+
+8. **非AI智能体错误**
+   - 确保非AI智能体方法使用 `@Agent` 注解
+   - 检查 `outputKey` 和输入变量名是否正确
+   - 验证确定性逻辑的正确性
+
+9. **人在回路阻塞**
+   - 人工验证环节会阻塞工作流执行
+   - 考虑使用异步智能体
+   - 实现超时机制
+
+10. **模型响应缓慢**
    - 检查硬件资源（CPU、内存）
    - 考虑使用更小的模型
    - 调整超时配置（`ollama.timeout`）
    - 对于本地模型，考虑使用GPU加速
 
-7. **Java 25 兼容性**
+11. **Java 25 兼容性**
    - 项目使用 Java 25，确保已安装 JDK 25
    - Maven编译器插件设置为Java 25
    - Lombok为可选依赖，打包时会被排除
@@ -623,3 +899,7 @@ MyAgent agent = AgenticServices
 - 循环工作流需要设置合理的退出条件和最大迭代次数，避免无限循环
 - 并行工作流可以提高效率，但需要注意结果聚合的正确性
 - 条件工作流中的条件按顺序检查，第一个满足的条件会被执行
+- 组合工作流支持多层嵌套，但要注意状态键名的唯一性
+- 监督者编排是动态的，但一次只能调用一个智能体，执行可能较慢
+- 非AI智能体适合确定性操作，可以提高效率和准确性
+- 人在回路环节会阻塞工作流，建议使用异步智能体或实现超时机制

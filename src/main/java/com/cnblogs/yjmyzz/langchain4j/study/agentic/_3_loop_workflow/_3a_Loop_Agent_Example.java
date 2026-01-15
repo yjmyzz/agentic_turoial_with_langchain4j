@@ -7,6 +7,7 @@ import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
@@ -19,7 +20,9 @@ import java.util.Map;
  * - ScoredCvTailor (接收简历并按照CvReview（反馈/指示+分数）进行定制优化)
  * - CvReviewer (接收优化后的简历和职位描述，返回CvReview对象（反馈+分数）
  * 此外，当分数超过特定阈值（例如0.7）时循环结束（退出条件）
+ * by 菩提树下的杨过(yjmyzz.cnblogs.com)
  */
+@SpringBootApplication
 public class _3a_Loop_Agent_Example {
 
     public static void main(String[] args) throws IOException {

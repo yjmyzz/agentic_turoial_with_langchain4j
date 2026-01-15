@@ -10,6 +10,7 @@ import dev.langchain4j.agentic.scope.AgenticScope;
 import dev.langchain4j.agentic.scope.ResultWithAgenticScope;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
@@ -24,7 +25,9 @@ import java.util.Map;
  * 并演示如何在它们之间传递参数。
  * 当组合多个Agent时，所有输入、中间和输出参数以及调用链都存储在
  * AgenticScope 中，可供高级用例访问。
+ * by 菩提树下的杨过(yjmyzz.cnblogs.com)
  */
+@SpringBootApplication
 public class _2b_Sequential_Agent_Example_Typed {
 
     public static void main(String[] args) throws IOException {
