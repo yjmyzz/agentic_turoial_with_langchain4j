@@ -1,0 +1,43 @@
+sequenceDiagram
+participant Main as Main Class (_5a_Conditional_Workflow_Example)
+participant Context as Spring Context
+participant Model as ChatModel
+participant RagProvider as RagProvider
+participant EmailAgent as EmailAssistant
+participant InterviewAgent as InterviewOrganizer
+participant ConditionalAgent as Conditional Agent
+participant OrganizingTools as OrganizingTools
+participant Candidate as Candidate Data
+
+    Main->>Context: Load Spring Application Context
+    Context-->>Main: Return ChatModel & RagProvider
+    Main->>Model: Get Ollama Chat Model
+    Main->>RagProvider: Get Rag Provider
+    
+    Main->>EmailAgent: Build EmailAssistant with OrganizingTools
+    Main->>InterviewAgent: Build InterviewOrganizer with RagProvider
+    Main->>ConditionalAgent: Build Conditional Agent with score-based routing
+    Note over ConditionalAgent: If score >= 0.8 -> InterviewOrganizer
+    Note over ConditionalAgent: If score < 0.8 -> EmailAssistant
+    
+    Main->>Candidate: Load candidate data from resources
+    Candidate-->>Main: Return candidate CV, contact, job description
+    
+    Main->>ConditionalAgent: Invoke with arguments (candidateCv, candidateContact, jobDescription, cvReview)
+    alt CV Review Score >= 0.8
+        ConditionalAgent->>InterviewAgent: Route to InterviewOrganizer
+        InterviewAgent->>OrganizingTools: Call tools to schedule interview
+        OrganizingTools->>OrganizingTools: getCurrentDate()
+        OrganizingTools->>OrganizingTools: getInvolvedEmployeesForInterview()
+        OrganizingTools->>OrganizingTools: createCalendarEntry()
+        OrganizingTools->>OrganizingTools: sendEmail()
+        OrganizingTools->>OrganizingTools: updateApplicationStatus()
+        InterviewAgent-->>ConditionalAgent: Return organization result
+    else CV Review Score < 0.8
+        ConditionalAgent->>EmailAgent: Route to EmailAssistant
+        EmailAgent->>OrganizingTools: Call tools to send rejection email
+        OrganizingTools->>OrganizingTools: sendEmail()
+        OrganizingTools->>OrganizingTools: updateApplicationStatus()
+        EmailAgent-->>ConditionalAgent: Return email ID
+    end
+    ConditionalAgent-->>Main: Return result

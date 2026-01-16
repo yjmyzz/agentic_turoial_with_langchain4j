@@ -1,0 +1,50 @@
+sequenceDiagram
+    participant Main as Main Class (_4_Parallel_Workflow_Example)
+    participant Context as Spring Context
+    participant Model as ChatModel
+    participant HrAgent as HrCvReviewer
+    participant ManagerAgent as ManagerCvReviewer
+    participant TeamAgent as TeamMemberCvReviewer
+    participant ParallelAgent as Parallel Agent
+    participant Executor as ThreadPoolExecutor
+    participant Candidate as Candidate Data
+
+    Main->>Context: Load Spring Application Context
+    Context-->>Main: Return ChatModel
+    Main->>Model: Get Ollama Chat Model
+
+    Main->>HrAgent: Build HrCvReviewer with outputKey "hrReview"
+    Main->>ManagerAgent: Build ManagerCvReviewer with outputKey "managerReview"
+    Main->>TeamAgent: Build TeamMemberCvReviewer with outputKey "teamMemberReview"
+
+    Main->>Executor: Create Fixed Thread Pool (size 3)
+
+    Main->>ParallelAgent: Build Parallel Agent with 3 sub-agents
+    Note over ParallelAgent: Sub-agents: HrCvReviewer, ManagerCvReviewer, TeamMemberCvReviewer
+    Note over ParallelAgent: Uses Executor for parallel execution
+
+    Main->>Candidate: Load candidate data from resources
+    Candidate-->>Main: Return candidate CV, job description, HR requirements, phone interview notes
+
+    Main->>ParallelAgent: Invoke with arguments (candidateCv, jobDescription, hrRequirements, phoneInterviewNotes)
+
+    ParallelAgent->>Executor: Submit all 3 agents for parallel execution
+    Executor->>HrAgent: Execute reviewCv(candidateCv, phoneInterviewNotes, hrRequirements)
+    Executor->>ManagerAgent: Execute reviewCv(candidateCv, jobDescription)
+    Executor->>TeamAgent: Execute reviewCv(candidateCv)
+
+    par Parallel Execution
+        HrAgent-->>Executor: Return CvReview (HR perspective)
+        ManagerAgent-->>Executor: Return CvReview (Manager perspective)
+        TeamAgent-->>Executor: Return CvReview (Team perspective)
+    end
+
+    Executor-->>ParallelAgent: Collect all results
+    ParallelAgent->>ParallelAgent: Aggregate results in output function
+    Note over ParallelAgent: Calculate average score and combine feedback
+    ParallelAgent-->>Main: Return aggregated CvReview result
+
+    Main->>Main: Print the final review result
+    Main->>Executor: Shutdown thread pool
+
+    Main-->>Main: Process completed

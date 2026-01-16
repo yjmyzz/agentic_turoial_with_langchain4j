@@ -1,0 +1,38 @@
+sequenceDiagram
+    participant Main as Main Class (_9a_HumanInTheLoop_Simple_Validator)
+    participant Context as Spring Context
+    participant Model as ChatModel
+    participant DecisionProposer as HiringDecisionProposer
+    participant HumanValidator as HumanInTheLoop Validator
+    participant Workflow as Hiring Decision Workflow
+    participant CvReview as CvReview Object
+    participant Human as Human User
+
+    Main->>Context: Load Spring Application Context
+    Context-->>Main: Return ChatModel
+    Main->>Model: Get Ollama Chat Model
+
+    Main->>DecisionProposer: Build HiringDecisionProposer with outputKey "modelDecision"
+    Main->>HumanValidator: Build HumanInTheLoop with description "验证模型提出的招聘决策"
+    Note over HumanValidator: inputKey "modelDecision", outputKey "finalDecision"
+    HumanValidator->>HumanValidator: Define requestWriter (print decision options)
+    HumanValidator->>HumanValidator: Define responseReader (Scanner input)
+
+    Main->>Workflow: Build sequence workflow with decisionProposer and humanValidator
+    Note over Workflow: OutputKey "finalDecision"
+
+    Main->>CvReview: Create CvReview object with score 0.85 and review text
+    Main->>Workflow: Invoke workflow with cvReview input
+
+    Workflow->>DecisionProposer: Process input and generate model decision
+    DecisionProposer-->>Workflow: Return model decision
+
+    Workflow->>HumanValidator: Pass model decision to human validator
+    HumanValidator->>Human: Display AI hiring suggestion and prompt for decision
+    Note over HumanValidator, Human: Show options: Invite On-site Interview (I), Reject (R), Hold (H)
+    Human-->>HumanValidator: Enter decision (I/R/H)
+
+    HumanValidator-->>Workflow: Return final decision
+    Workflow-->>Main: Return final decision
+
+    Main->>Main: Print final decision result

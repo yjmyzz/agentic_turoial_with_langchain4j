@@ -22,11 +22,9 @@ ollama:
   embedding-model: nomic-embed-text:latest
   timeout: 60
 
-
-
 # 应用信息
 info:
   app:
     name: langchain4j Study
     version: 1.0.0
-    description: langchain4j学习项目 - 跟踪Trace示例
+    description: langchain4j学习项目-agent编排

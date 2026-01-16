@@ -1,0 +1,42 @@
+sequenceDiagram
+    participant Main as Main Class (_3a_Loop_Agent_Example)
+    participant Context as Spring Context
+    participant Model as ChatModel
+    participant CvReviewer as CvReviewer
+    participant ScoredCvTailor as ScoredCvTailor
+    participant LoopAgent as Loop Agent
+    participant Candidate as Candidate Data
+
+    Main->>Context: Load Spring Application Context
+    Context-->>Main: Return ChatModel
+    Main->>Model: Get Ollama Chat Model
+
+    Main->>CvReviewer: Build CvReviewer with outputKey "cvReview"
+    Main->>ScoredCvTailor: Build ScoredCvTailor with outputKey "cv"
+
+    Main->>LoopAgent: Build Loop Agent with cvReviewer and scoredCvTailor
+    Note over LoopAgent: Loop agents: CvReviewer, ScoredCvTailor
+    Note over LoopAgent: Exit condition: score > 0.8, Max iterations: 3
+
+    Main->>Candidate: Load candidate data from resources
+    Candidate-->>Main: Return master CV and job description
+
+    Main->>LoopAgent: Invoke with arguments (cv, jobDescription)
+
+    loop Until exit condition met (score > 0.8 or max iterations = 3)
+        LoopAgent->>CvReviewer: Execute reviewCv(cv, jobDescription)
+        CvReviewer-->>LoopAgent: Return CvReview with score and feedback
+
+        LoopAgent->>LoopAgent: Check exit condition
+        alt Score <= 0.8 and iterations < 3
+            LoopAgent->>ScoredCvTailor: Execute tailorCv(cv, cvReview)
+            ScoredCvTailor-->>LoopAgent: Return improved CV
+            LoopAgent->>LoopAgent: Update state with new CV
+        end
+    end
+
+    LoopAgent->>LoopAgent: Final check and prepare output
+    LoopAgent-->>Main: Return final CV
+
+    Main->>Main: Print the final tailored CV
+    Main-->>Main: Process completed

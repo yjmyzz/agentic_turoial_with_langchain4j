@@ -18,7 +18,7 @@ import java.util.Map;
  * 此示例演示了条件式智能体工作流。
  * 基于评分和候选人资料，我们将执行以下操作之一：
  * - 调用一个智能体，为该候选人的现场面试做好一切准备
- * - 调用一个智能体，发送一封友好的邮件，告知我们不会推进该候选人的申请*
+ * - 调用一个智能体，发送一封友好的邮件，告知我们不会推进该候选人的申请
  * by 菩提树下的杨过(yjmyzz.cnblogs.com)
  */
 @SpringBootApplication
@@ -27,6 +27,7 @@ public class _5a_Conditional_Workflow_Example {
     public static void main(String[] args) throws IOException {
         ConfigurableApplicationContext context = SpringApplication.run(AgentDesignPatternApplication.class, args);
         ChatModel model = context.getBean("ollamaChatModel", ChatModel.class);
+        RagProvider ragProvider = context.getBean("ragProvider", RagProvider.class);
 
         // 2. 在此包中定义两个子智能体：
         //      - EmailAssistant.java
@@ -40,7 +41,7 @@ public class _5a_Conditional_Workflow_Example {
         InterviewOrganizer interviewOrganizer = AgenticServices.agentBuilder(InterviewOrganizer.class)
                 .chatModel(model)
                 .tools(new OrganizingTools())
-                .contentRetriever(RagProvider.loadHouseRulesRetriever()) // 这是如何为智能体添加RAG的方式
+                .contentRetriever(ragProvider.loadHouseRulesRetriever()) // 这是如何为智能体添加RAG的方式
                 .build();
 
         // 4. 构建条件式工作流

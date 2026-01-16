@@ -6,10 +6,14 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.internal.Utils;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.bgesmallenv15q.BgeSmallEnV15QuantizedEmbeddingModel;
+import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -19,16 +23,21 @@ import java.util.List;
 
 import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocument;
 
+@Component("ragProvider")
 public class RagProvider {
 
-    public static ContentRetriever loadHouseRulesRetriever() {
+    @Autowired
+    @Qualifier("ollamaEmbeddingModel")
+    OllamaEmbeddingModel ollamaEmbeddingModel;
+
+    public ContentRetriever loadHouseRulesRetriever() {
         Document doc = loadDocument(toPath("documents/house_rules.txt"));
-        EmbeddingModel embeddingModel = new BgeSmallEnV15QuantizedEmbeddingModel();
+//        EmbeddingModel embeddingModel = new BgeSmallEnV15QuantizedEmbeddingModel();
         InMemoryEmbeddingStore<TextSegment> store = new InMemoryEmbeddingStore<>();
 
         EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                 .documentSplitter(DocumentSplitters.recursive(200, 10))
-                .embeddingModel(embeddingModel)
+                .embeddingModel(ollamaEmbeddingModel)
                 .embeddingStore(store)
                 .build();
 
@@ -36,7 +45,7 @@ public class RagProvider {
 
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(store)
-                .embeddingModel(embeddingModel)
+                .embeddingModel(ollamaEmbeddingModel)
                 .maxResults(2)
                 .minScore(0.8)
                 .build();

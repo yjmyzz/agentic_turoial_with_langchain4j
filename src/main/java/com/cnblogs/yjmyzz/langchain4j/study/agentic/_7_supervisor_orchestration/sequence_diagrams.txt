@@ -1,0 +1,152 @@
+sequenceDiagram
+    participant Main as _7a_Supervisor_Orchestration.main()
+    participant SpringCtx as SpringApplication
+    participant ChatModel as OllamaChatModel
+    participant AgenticSvc as AgenticServices
+    participant StringLoader as StringLoader
+    participant Supervisor as HiringSupervisor
+    participant HrReviewer as HrCvReviewer
+    participant ManagerReviewer as ManagerCvReviewer
+    participant TeamReviewer as TeamMemberCvReviewer
+    participant InterviewOrg as InterviewOrganizer
+    participant EmailAsst as EmailAssistant
+
+    %% 初始化阶段
+    Main->>SpringCtx: SpringApplication.run(AgentDesignPatternApplication.class, args)
+    SpringCtx-->>Main: ConfigurableApplicationContext
+
+    Main->>SpringCtx: getBean("ollamaChatModel", ChatModel.class)
+    SpringCtx-->>Main: ChatModel实例
+
+    %% 构建子Agents
+    Note over Main,AgenticSvc: 构建所有子智能体
+
+    Main->>AgenticSvc: agentBuilder(HrCvReviewer.class)
+    AgenticSvc-->>Main: HrReviewer Builder
+    Main->>AgenticSvc: .chatModel(model).outputKey("hrReview").build()
+    AgenticSvc-->>Main: HrReviewer实例
+
+    Main->>AgenticSvc: agentBuilder(ManagerCvReviewer.class)
+    AgenticSvc-->>Main: ManagerReviewer Builder
+    Main->>AgenticSvc: .chatModel(model).outputKey("managerReview").build()
+    AgenticSvc-->>Main: ManagerReviewer实例
+
+    Main->>AgenticSvc: agentBuilder(TeamMemberCvReviewer.class)
+    AgenticSvc-->>Main: TeamReviewer Builder
+    Main->>AgenticSvc: .chatModel(model).outputKey("teamMemberReview").build()
+    AgenticSvc-->>Main: TeamReviewer实例
+
+    Main->>AgenticSvc: agentBuilder(InterviewOrganizer.class)
+    AgenticSvc-->>Main: InterviewOrg Builder
+    Main->>AgenticSvc: .chatModel(model).tools(OrganizingTools).build()
+    AgenticSvc-->>Main: InterviewOrg实例
+
+    Main->>AgenticSvc: agentBuilder(EmailAssistant.class)
+    AgenticSvc-->>Main: EmailAsst Builder
+    Main->>AgenticSvc: .chatModel(model).tools(OrganizingTools).build()
+    AgenticSvc-->>Main: EmailAsst实例
+
+    %% 构建监督者
+    Note over Main,AgenticSvc: 构建监督者智能体
+
+    Main->>AgenticSvc: supervisorBuilder()
+    AgenticSvc-->>Main: Supervisor Builder
+
+    Main->>AgenticSvc: .chatModel(model)
+    Main->>AgenticSvc: .subAgents(hrReviewer, managerReviewer, teamReviewer, interviewOrganizer, emailAssistant)
+    Main->>AgenticSvc: .contextGenerationStrategy(CHAT_MEMORY_AND_SUMMARIZATION)
+    Main->>AgenticSvc: .responseStrategy(SUMMARY)
+    Main->>AgenticSvc: .supervisorContext("使用所有评审者，用英语回答...")
+    Main->>AgenticSvc: .build()
+    AgenticSvc-->>Main: SupervisorAgent (hiringSupervisor)
+
+    %% 加载数据
+    Note over Main,StringLoader: 加载候选人数据
+
+    Main->>StringLoader: loadFromResource("/documents/job_description_backend.txt")
+    StringLoader-->>Main: jobDescription
+
+    Main->>StringLoader: loadFromResource("/documents/tailored_cv.txt")
+    StringLoader-->>Main: candidateCv
+
+    Main->>StringLoader: loadFromResource("/documents/candidate_contact.txt")
+    StringLoader-->>Main: candidateContact
+
+    Main->>StringLoader: loadFromResource("/documents/hr_requirements.txt")
+    StringLoader-->>Main: hrRequirements
+
+    Main->>StringLoader: loadFromResource("/documents/phone_interview_notes.txt")
+    StringLoader-->>Main: phoneInterviewNotes
+
+    %% 监督者执行阶段
+    Note over Main: 开始监督者执行流程
+
+    Main->>Main: 开始计时 System.nanoTime()
+
+    Main->>Supervisor: invoke(自然语言请求)
+    Note right of Supervisor: 请求包含所有候选人信息
+
+    %% 监督者内部决策循环
+    rect rgb(220, 255, 220)
+        loop 监督者决策循环
+            Note right of Supervisor: 1. 分析当前状态和可用Agents
+
+            alt 决定调用HR评审
+                Supervisor->>HrReviewer: reviewCv(candidateCv, phoneInterviewNotes, hrRequirements)
+                HrReviewer->>ChatModel: 调用LLM进行HR评审
+                ChatModel-->>HrReviewer: 返回CvReview对象
+                HrReviewer-->>Supervisor: hrReview (score, feedback)
+                Note right of Supervisor: 存储HR评审结果
+            end
+
+            alt 决定调用经理评审
+                Supervisor->>ManagerReviewer: reviewCv(candidateCv, jobDescription)
+                ManagerReviewer->>ChatModel: 调用LLM进行经理评审
+                ChatModel-->>ManagerReviewer: 返回CvReview对象
+                ManagerReviewer-->>Supervisor: managerReview (score, feedback)
+                Note right of Supervisor: 存储经理评审结果
+            end
+
+            alt 决定调用团队成员评审
+                Supervisor->>TeamReviewer: reviewCv(candidateCv)
+                TeamReviewer->>ChatModel: 调用LLM进行团队评审
+                ChatModel-->>TeamReviewer: 返回CvReview对象
+                TeamReviewer-->>Supervisor: teamMemberReview (score, feedback)
+                Note right of Supervisor: 存储团队评审结果
+            end
+
+            alt 决定安排面试
+                Supervisor->>InterviewOrg: organizeInterview()
+                InterviewOrg->>InterviewOrg: 调用OrganizingTools工具
+                InterviewOrg->>InterviewOrg: createCalendarEntry()
+                InterviewOrg->>InterviewOrg: sendEmail()
+                InterviewOrg->>InterviewOrg: updateApplicationStatus()
+                InterviewOrg-->>Supervisor: 返回面试安排结果
+                Note right of Supervisor: 完成面试安排
+            end
+
+            alt 决定发送拒绝邮件
+                Supervisor->>EmailAsst: sendRejectionEmail()
+                EmailAsst->>EmailAsst: 调用OrganizingTools工具
+                EmailAsst->>EmailAsst: sendEmail()
+                EmailAsst->>EmailAsst: updateApplicationStatus()
+                EmailAsst-->>Supervisor: 返回邮件ID
+                Note right of Supervisor: 完成拒绝通知
+            end
+
+            Note right of Supervisor: 2. 评估是否完成任务
+            alt 任务完成
+                Supervisor->>Supervisor: 调用'done'智能体结束流程
+            else 任务未完成
+                Supervisor->>Supervisor: 继续下一轮决策
+            end
+        end
+    end
+
+    Supervisor-->>Main: 返回执行摘要结果
+
+    Main->>Main: 结束计时 System.nanoTime()
+    Main->>Main: 计算执行时间
+
+    Main->>Main: System.out.println("监督者运行完成，耗时X秒")
+    Main->>Main: System.out.println(执行结果)

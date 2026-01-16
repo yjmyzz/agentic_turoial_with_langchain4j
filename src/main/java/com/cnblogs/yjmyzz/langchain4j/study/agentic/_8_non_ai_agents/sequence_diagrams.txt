@@ -1,0 +1,55 @@
+sequenceDiagram
+    participant Main as Main Class (_8_Non_AI_Agents)
+    participant Context as Spring Context
+    participant Model as ChatModel
+    participant HrReviewer as HR Cv Reviewer
+    participant ManagerReviewer as Manager Cv Reviewer
+    participant TeamReviewer as Team Member Cv Reviewer
+    participant ParallelWorkflow as Parallel Review Workflow
+    participant ScoreAggregator as ScoreAggregator (Non-AI Agent)
+    participant StatusUpdate as StatusUpdate (Non-AI Agent)
+    participant AnonymousFunc as Anonymous Function (Non-AI Agent)
+    participant CandidateData as Candidate Data
+
+    Main->>Context: Load Spring Application Context
+    Context-->>Main: Return ChatModel
+    Main->>Model: Get Ollama Chat Model
+
+    Main->>HrReviewer: Build HrCvReviewer with outputKey "hrReview"
+    Main->>ManagerReviewer: Build ManagerCvReviewer with outputKey "managerReview"
+    Main->>TeamReviewer: Build TeamMemberCvReviewer with outputKey "teamMemberReview"
+
+    Main->>ParallelWorkflow: Build parallel workflow with 3 reviewers
+    Note over ParallelWorkflow: Uses fixed thread pool with 3 threads
+
+    Main->>ScoreAggregator: Create ScoreAggregator instance (Non-AI Agent)
+    Main->>StatusUpdate: Create StatusUpdate instance (Non-AI Agent)
+    Main->>AnonymousFunc: Create anonymous function agent (Non-AI Agent)
+
+    Main->>CandidateData: Load candidate data from resources
+    CandidateData-->>Main: Return candidateCv, candidateContact, hrRequirements, phoneInterviewNotes, jobDescription
+
+    Main->>ParallelWorkflow: Invoke with candidate data
+    par Parallel Reviews
+        ParallelWorkflow->>HrReviewer: Process HR Review
+        HrReviewer-->>ParallelWorkflow: Return HR Review
+        ParallelWorkflow->>ManagerReviewer: Process Manager Review
+        ManagerReviewer-->>ParallelWorkflow: Return Manager Review
+        ParallelWorkflow->>TeamReviewer: Process Team Member Review
+        TeamReviewer-->>ParallelWorkflow: Return Team Member Review
+    end
+
+    ParallelWorkflow->>ScoreAggregator: Pass all reviews to aggregate scores
+    ScoreAggregator->>ScoreAggregator: Calculate combined score
+    ScoreAggregator-->>AnonymousFunc: Return combinedCvReview with aggregated score
+
+    AnonymousFunc->>StatusUpdate: Update application status based on combined review
+    StatusUpdate-->>AnonymousFunc: Status updated in DB
+
+    AnonymousFunc->>AnonymousFunc: Read combinedCvReview from agentic scope
+    AnonymousFunc->>AnonymousFunc: Convert score to percentage (score * 100)
+    AnonymousFunc->>AnonymousFunc: Write to agentic scope with key "scoreAsPercentage"
+
+    AnonymousFunc-->>Main: Return scoreAsPercentage
+    Main->>Main: Print scoreAsPercentage result
+    Main->>Main: Shutdown executor

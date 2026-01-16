@@ -22,7 +22,8 @@
   - 组合工作流（Composed Workflow）
   - 监督者编排（Supervisor Orchestration）
   - 非AI智能体（Non-AI Agents）
-  - 人工参与循环交互（Human in the Loop）
+  - 人机协同决策（Human in the Loop）
+- **最新更新**: 2026年1月 - 新增异步条件工作流示例和人类记忆聊天机器人示例
 
 ## 📋 前置要求
 
@@ -195,7 +196,7 @@ UntypedAgent cvReviewGenerator = AgenticServices
 
 ### 5. 条件工作流（Conditional Workflow）
 
-**示例文件**: `_5a_Conditional_Workflow_Example.java`
+**示例文件**: `_5a_Conditional_Workflow_Example.java`, `_5b_Conditional_Workflow_Example_Async.java`
 
 演示如何根据条件选择执行不同的Agent分支。
 
@@ -208,6 +209,7 @@ UntypedAgent cvReviewGenerator = AgenticServices
 - 通过Lambda表达式定义条件
 - 支持工具（Tools）和RAG（检索增强生成）
 - 条件按顺序检查，第一个满足的条件会被执行
+- 支持同步和异步执行模式
 
 **运行示例**:
 ```java
@@ -336,13 +338,15 @@ UntypedAgent workflow = AgenticServices
     .build();
 ```
 
-### 9. 人工参与循环交互（Human in the Loop）
+### 9. 人机协同决策（Human in the Loop）
 
-**示例文件**: `_9a_HumanInTheLoop_Simple_Validator.java`
+**示例文件**: `_9a_HumanInTheLoop_Simple_Validator.java`, `_9b_HumanInTheLoop_Chatbot_With_Memory.java`
 
 演示如何在工作流中集成人工验证环节，实现人机协作。
 
-**功能**: AI提出招聘决策建议，人工验证并做出最终决定
+**功能**: 
+- AI提出招聘决策建议，人工验证并做出最终决定（简单验证器）
+- 带有记忆功能的AI聊天机器人，能够记住对话历史和用户偏好（带记忆聊天机器人）
 
 **关键特性**:
 - 使用 `humanInTheLoopBuilder()` 创建人工验证环节
@@ -350,6 +354,7 @@ UntypedAgent workflow = AgenticServices
 - 可以集成到任何工作流中
 - 适合需要人工审核、验证或决策的场景
 - 建议使用异步智能体避免阻塞
+- 支持记忆功能以保持对话上下文
 
 **运行示例**:
 ```java
@@ -423,7 +428,7 @@ src/
 │   │   │   │   ├── _8_Non_AI_Agents.java
 │   │   │   │   ├── ScoreAggregator.java
 │   │   │   │   └── StatusUpdate.java
-│   │   │   └── _9_human_in_the_loop/         # 人在回路示例
+│   │   │   └── _9_human_in_the_loop/         # 人机协同决策示例
 │   │   │       ├── _9a_HumanInTheLoop_Simple_Validator.java
 │   │   │       ├── _9b_HumanInTheLoop_Chatbot_With_Memory.java
 │   │   │       ├── DecisionsReachedService.java
@@ -588,7 +593,7 @@ java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._7_supervis
 java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._8_non_ai_agents._8_Non_AI_Agents
 ```
 
-### 运行人在回路示例
+### 运行人机协同决策示例
 
 ```bash
 java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._9_human_in_the_loop._9a_HumanInTheLoop_Simple_Validator
@@ -723,7 +728,7 @@ AgenticServices.agentAction(scope -> {
 })
 ```
 
-#### 人在回路
+#### 人机协同决策
 ```java
 HumanInTheLoop humanValidator = AgenticServices.humanInTheLoopBuilder()
     .description("描述人工验证环节")
@@ -738,6 +743,30 @@ HumanInTheLoop humanValidator = AgenticServices.humanInTheLoopBuilder()
         return new Scanner(System.in).nextLine();
     })
     .build();
+```
+
+#### 异步Agent
+```java
+// 创建异步Agent
+AsyncAgent asyncAgent = AgenticServices.asyncBuilder(MyAgent.class)
+    .chatModel(model)
+    .build();
+
+// 异步调用
+CompletableFuture<Object> future = asyncAgent.invokeAsync(inputs);
+Object result = future.get(); // 等待结果
+```
+
+#### 记忆功能
+```java
+// 使用AgenticScope的记忆功能
+MyAgent agent = AgenticServices.agentBuilder(MyAgent.class)
+    .chatModel(model)
+    .build();
+
+// 在工作流中保持状态和记忆
+Map<String, Object> initialState = Map.of("conversationHistory", history);
+Object result = agent.invoke(initialState);
 ```
 
 ### 使用工具（Tools）
@@ -817,18 +846,28 @@ MyAgent agent = AgenticServices
    - 检查 `outputKey` 和输入变量名是否正确
    - 验证确定性逻辑的正确性
 
-9. **人在回路阻塞**
+9. **人机协同阻塞**
    - 人工验证环节会阻塞工作流执行
    - 考虑使用异步智能体
    - 实现超时机制
 
-10. **模型响应缓慢**
+10. **异步Agent问题**
+   - 确保正确处理CompletableFuture
+   - 注意异步调用的异常处理
+   - 避免在异步环境中丢失上下文
+
+11. **记忆功能问题**
+   - 检查AgenticScope状态管理
+   - 确保状态键名不冲突
+   - 验证记忆持久化配置
+
+12. **模型响应缓慢**
    - 检查硬件资源（CPU、内存）
    - 考虑使用更小的模型
    - 调整超时配置（`ollama.timeout`）
    - 对于本地模型，考虑使用GPU加速
 
-11. **Java 25 兼容性**
+13. **Java 25 兼容性**
    - 项目使用 Java 25，确保已安装 JDK 25
    - Maven编译器插件设置为Java 25
    - Lombok为可选依赖，打包时会被排除
@@ -871,6 +910,25 @@ MyAgent agent = AgenticServices
 
 本项目采用 MIT 许可证。
 
+## 📈 项目更新历史
+
+### v1.0.0 (2024年)
+- 初始版本，包含9种基本Agent工作流模式
+- 基础Agent、顺序工作流、循环工作流、并行工作流、条件工作流
+- 组合工作流、监督者编排、非AI智能体、人机协同决策
+
+### v1.1.0 (2025年)
+- 新增异步条件工作流示例
+- 添加带记忆功能的聊天机器人示例
+- 改进错误处理和异常管理
+- 优化性能和资源使用
+
+### v1.2.0 (2026年1月)
+- 增强记忆管理和状态持久化
+- 添加最佳实践和项目维护建议
+- 完善文档和示例代码
+- 优化异步Agent实现
+
 ## 🤝 贡献
 
 欢迎提交Issue和Pull Request来改进这个项目！
@@ -881,6 +939,21 @@ MyAgent agent = AgenticServices
 - 提交GitHub Issue
 - 作者博客: http://yjmyzz.cnblogs.com
 - 作者: 菩提树下的杨过
+
+## 🚀 最佳实践与建议
+
+### Agent设计最佳实践
+1. **状态管理**: 合理规划AgenticScope中的状态键名，避免冲突
+2. **错误处理**: 为每个工作流添加适当的错误处理机制
+3. **性能优化**: 对于确定性操作优先使用非AI智能体
+4. **记忆管理**: 在长期对话中合理使用记忆功能
+5. **异步处理**: 在需要等待外部输入时使用异步Agent
+
+### 项目维护建议
+1. **版本管理**: 定期更新LangChain4j版本以获得新功能
+2. **模型优化**: 根据具体需求调整Ollama模型配置
+3. **监控指标**: 添加工作流执行时间、成功率等监控指标
+4. **测试覆盖**: 为每个Agent和工作流编写单元测试
 
 ## 🙏 致谢
 
@@ -902,4 +975,7 @@ MyAgent agent = AgenticServices
 - 组合工作流支持多层嵌套，但要注意状态键名的唯一性
 - 监督者编排是动态的，但一次只能调用一个智能体，执行可能较慢
 - 非AI智能体适合确定性操作，可以提高效率和准确性
-- 人在回路环节会阻塞工作流，建议使用异步智能体或实现超时机制
+- 人机协同决策环节会阻塞工作流，建议使用异步智能体或实现超时机制
+- 异步Agent需要适当处理并发和异常情况
+- 记忆功能有助于保持对话上下文，但需注意内存使用
+- 定期更新依赖项以获取最新功能和安全修复
