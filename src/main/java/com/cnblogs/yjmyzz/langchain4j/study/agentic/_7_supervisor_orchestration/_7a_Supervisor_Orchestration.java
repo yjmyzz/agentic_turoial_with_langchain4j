@@ -8,6 +8,7 @@ import com.cnblogs.yjmyzz.langchain4j.study.agentic._4_parallel_workflow.TeamMem
 import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.EmailAssistant;
 import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.InterviewOrganizer;
 import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.OrganizingTools;
+import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.RagProvider;
 import com.cnblogs.yjmyzz.langchain4j.study.util.StringLoader;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.supervisor.SupervisorAgent;
@@ -39,6 +40,7 @@ public class _7a_Supervisor_Orchestration {
     public static void main(String[] args) throws IOException {
         ConfigurableApplicationContext context = SpringApplication.run(AgentDesignPatternApplication.class, args);
         ChatModel model = context.getBean("ollamaChatModel", ChatModel.class);
+        RagProvider ragProvider = context.getBean("ragProvider", RagProvider.class);
 
         // 1. 定义所有子智能体
         HrCvReviewer hrReviewer = AgenticServices.agentBuilder(HrCvReviewer.class)
@@ -62,6 +64,7 @@ public class _7a_Supervisor_Orchestration {
         InterviewOrganizer interviewOrganizer = AgenticServices.agentBuilder(InterviewOrganizer.class)
                 .chatModel(model)
                 .tools(new OrganizingTools())
+                .contentRetriever(ragProvider.loadHouseRulesRetriever())
                 .build();
 
         EmailAssistant emailAssistant = AgenticServices.agentBuilder(EmailAssistant.class)
@@ -75,7 +78,7 @@ public class _7a_Supervisor_Orchestration {
                 .subAgents(hrReviewer, managerReviewer, teamReviewer, interviewOrganizer, emailAssistant)
                 .contextGenerationStrategy(SupervisorContextStrategy.CHAT_MEMORY_AND_SUMMARIZATION)
                 .responseStrategy(SupervisorResponseStrategy.SUMMARY) // 我们想要执行过程的摘要，而不是检索特定响应
-                .supervisorContext("始终使用所有可用的评审者。始终用英语回答。调用智能体时，使用纯JSON（无反引号，换行符使用反斜杠+n）。") // 监督者行为的可选上下文
+                .supervisorContext("始终使用所有可用的评审者。始终用中文回答。调用智能体时，使用纯JSON（无反引号，换行符使用反斜杠+n）。") // 监督者行为的可选上下文
                 .build();
         // 重要须知：监督者一次调用一个智能体，然后审查其计划以选择下一个调用的智能体
         // 监督者无法并行执行智能体
@@ -93,11 +96,11 @@ public class _7a_Supervisor_Orchestration {
         // 4. 用自然语言请求调用监督者
         String result = (String) hiringSupervisor.invoke(
                 "评估以下候选人：\n" +
-                        "候选人简历：\n" + candidateCv + "\n\n" +
-                        "候选人联系方式：\n" + candidateContact + "\n\n" +
-                        "职位描述：\n" + jobDescription + "\n\n" +
-                        "HR要求：\n" + hrRequirements + "\n\n" +
-                        "电话面试记录：\n" + phoneInterviewNotes
+                        "候选人简历(candidateCv)：\n" + candidateCv + "\n\n" +
+                        "候选人联系方式(candidateContact)：\n" + candidateContact + "\n\n" +
+                        "职位描述(jobDescription)：\n" + jobDescription + "\n\n" +
+                        "HR要求(hrRequirements)：\n" + hrRequirements + "\n\n" +
+                        "电话面试记录(phoneInterviewNotes)：\n" + phoneInterviewNotes
         );
         long end = System.nanoTime();
         double elapsedSeconds = (end - start) / 1_000_000_000.0;

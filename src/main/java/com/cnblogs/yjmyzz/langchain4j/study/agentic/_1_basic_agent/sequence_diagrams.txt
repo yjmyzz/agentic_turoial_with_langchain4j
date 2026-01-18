@@ -1,0 +1,46 @@
+# _1a_Basic_Agent_Example 时序图
+
+```mermaid
+sequenceDiagram
+    participant Main as Main Thread
+    participant Spring as Spring Context
+    participant Model as ChatModel (Ollama)
+    participant Agent as CvGenerator Agent
+    participant Service as AgenticServices
+    participant Loader as StringLoader
+    participant Output as System.out
+    
+    Main->>Spring: SpringApplication.run()
+    Spring-->>Main: 返回 ConfigurableApplicationContext
+    Main->>Spring: getBean("ollamaChatModel")
+    Spring-->>Main: ChatModel instance
+    
+    Main->>Service: agentBuilder(CvGenerator.class)
+    Service->>Service: 设置 chatModel
+    Service->>Service: 设置 outputKey("masterCv")
+    Service-->>Main: 构建 CvGenerator 实例
+    
+    Main->>Loader: loadFromResource("/documents/user_life_story.txt")
+    Loader-->>Main: 返回 lifeStory 字符串
+    
+    Main->>Agent: generateCv(lifeStory)
+    Agent->>Model: 发送格式化提示消息
+    Note over Agent,Model: 包含用户生活故事和简历生成要求
+    Model-->>Agent: 返回生成的简历文本
+    Agent-->>Main: 返回生成的简历
+    
+    Main->>Output: println("=== 简历 ===")
+    Main->>Output: println(简历内容)
+```
+
+## 描述
+
+这个时序图展示了基本Agent示例的工作流程：
+
+1. 主线程启动Spring应用程序并获取Ollama聊天模型实例
+2. 使用AgenticServices构建CvGenerator代理，配置其参数
+3. 从资源文件加载用户生活故事
+4. 调用代理的generateCv方法，传入用户生活故事
+5. 代理向LLM发送格式化的提示消息，要求生成简历
+6. LLM处理请求并返回生成的简历文本
+7. 最后将生成的简历打印到控制台

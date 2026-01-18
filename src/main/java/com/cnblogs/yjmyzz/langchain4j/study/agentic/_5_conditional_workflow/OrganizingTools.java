@@ -9,7 +9,7 @@ import java.util.List;
 
 public class OrganizingTools {
 
-    @Tool
+    @Tool("获取当前日期")
     public Date getCurrentDate(){
         return new Date();
     }
@@ -32,7 +32,7 @@ public class OrganizingTools {
         System.out.println("结束时间：" + end);
     }
 
-    @Tool
+    @Tool("根据给定的收件人、抄送、主题和正文，发送中文电子邮件。返回虚拟邮件ID。")
     public int sendEmail(@P("收件人电子邮件地址列表") List<String> to, @P("抄送电子邮件地址列表") List<String> cc, @P("邮件主题") String subject, @P("正文") String body){
         // 演示用虚拟实现
         System.out.println("*** 已发送邮件 ***");
@@ -43,7 +43,7 @@ public class OrganizingTools {
         return 1234; // 虚拟邮件ID
     }
 
-    @Tool
+    @Tool("根据给定的职位描述ID、候选人姓名和新状态，更新申请状态")
     public void updateApplicationStatus(@P("职位描述ID") String jobDescriptionId, @P("候选人（名，姓）") String candidateName, @P("新的申请状态") String newStatus){
         // 演示用虚拟实现
         System.out.println("*** 已更新申请状态 ***");

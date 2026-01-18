@@ -1,202 +1,90 @@
+# 复合工作流时序图
+
+## 候选人工作流部分
+
+```mermaid
 sequenceDiagram
-    participant Main as _6_Composed_Workflow_Example.main()
-    participant SpringCtx as SpringApplication
-    participant ChatModel as OllamaChatModel
-    participant AgenticSvc as AgenticServices
-    participant StringLoader as StringLoader
-
-    %% 第一部分：候选人组合工作流初始化
-    Note over Main: ========== 候选人组合工作流 ==========
-
-    Main->>SpringCtx: SpringApplication.run(AgentDesignPatternApplication.class, args)
-    SpringCtx-->>Main: ConfigurableApplicationContext
-
-    Main->>SpringCtx: getBean("ollamaChatModel", ChatModel.class)
-    SpringCtx-->>Main: ChatModel实例
-
-    %% 构建基础Agents
-    Note over Main,AgenticSvc: 构建基础Agent组件
-
-    Main->>AgenticSvc: agentBuilder(CvGenerator.class)
-    AgenticSvc-->>Main: CvGenerator Builder
-    Main->>AgenticSvc: .chatModel(model).outputKey("cv").build()
-    AgenticSvc-->>Main: CvGenerator实例
-
-    Main->>AgenticSvc: agentBuilder(ScoredCvTailor.class)
-    AgenticSvc-->>Main: ScoredCvTailor Builder
-    Main->>AgenticSvc: .chatModel(model).outputKey("cv").build()
-    AgenticSvc-->>Main: ScoredCvTailor实例
-
-    Main->>AgenticSvc: agentBuilder(CvReviewer.class)
-    AgenticSvc-->>Main: CvReviewer Builder
-    Main->>AgenticSvc: .chatModel(model).outputKey("cvReview").build()
-    AgenticSvc-->>Main: CvReviewer实例
-
-    %% 构建循环工作流
-    Note over Main,AgenticSvc: 构建简历改进循环工作流
-
-    Main->>AgenticSvc: loopBuilder()
-    AgenticSvc-->>Main: Loop Builder
-    Main->>AgenticSvc: .subAgents(scoredCvTailor, cvReviewer)
-    Main->>AgenticSvc: .outputKey("cv")
-    Main->>AgenticSvc: .exitCondition(lambda)
-    Main->>AgenticSvc: .maxIterations(3).build()
-    AgenticSvc-->>Main: UntypedAgent (cvImprovementLoop)
-
-    %% 构建候选人工作流
-    Note over Main,AgenticSvc: 构建完整的候选人工作流
-
-    Main->>AgenticSvc: sequenceBuilder(CandidateWorkflow.class)
-    AgenticSvc-->>Main: Sequence Builder
-    Main->>AgenticSvc: .subAgents(cvGenerator, cvReviewer, cvImprovementLoop)
-    Main->>AgenticSvc: .outputKey("cv").build()
-    AgenticSvc-->>Main: CandidateWorkflow实例
-
-    %% 执行候选人工作流
-    Note over Main,StringLoader: 加载候选人输入数据
-
-    Main->>StringLoader: loadFromResource("/documents/user_life_story.txt")
-    StringLoader-->>Main: lifeStory
-
-    Main->>StringLoader: loadFromResource("/documents/job_description_backend.txt")
-    StringLoader-->>Main: jobDescription
-
-    Note over Main: 执行候选人工作流
-
-    Main->>Main: candidateWorkflow.processCandidate(lifeStory, jobDescription)
-
-    %% 候选人工作流内部执行
-    Note over Main: 候选人工作流内部执行流程
-
-    rect rgb(200, 230, 255)
-        Note right of Main: 1. CvGenerator生成主简历
-        Main->>Main: cvGenerator.generateCv(lifeStory) → masterCv
-
-        Note right of Main: 2. CvReviewer首次评审
-        Main->>Main: cvReviewer.reviewCv(masterCv, jobDescription) → cvReview(score<0.8)
-
-        loop 改进循环 (最多3次)
-            Note right of Main: 3. ScoredCvTailor优化简历
-            Main->>Main: scoredCvTailor.tailorCv(masterCv, cvReview) → improvedCv
-
-            Note right of Main: 4. CvReviewer再次评审
-            Main->>Main: cvReviewer.reviewCv(improvedCv, jobDescription) → newCvReview
-
-            alt 分数>=0.8
-                Note right of Main: 退出循环
-            else 分数<0.8 且未达最大迭代次数
-                Note right of Main: 继续循环
-            end
+    participant Main as 主程序
+    participant CandidateWorkflow as CandidateWorkflow
+    participant CvGenerator as CvGenerator
+    participant CvReviewer as CvReviewer
+    participant CvImprovementLoop as 简历改进循环
+    participant ScoredCvTailor as ScoredCvTailor
+    
+    Main->>CandidateWorkflow: processCandidate(个人履历, 职位描述)
+    CandidateWorkflow->>CvGenerator: 生成简历
+    CvGenerator-->>CandidateWorkflow: 返回简历
+    CandidateWorkflow->>CvReviewer: 评审简历
+    CvReviewer-->>CandidateWorkflow: 返回评审结果
+    CandidateWorkflow->>CvImprovementLoop: 启动简历改进循环
+    loop 简历评分 < 0.8
+        CvImprovementLoop->>ScoredCvTailor: 根据评分调整简历
+        ScoredCvTailor-->>CvImprovementLoop: 返回调整后的简历
+        CvImprovementLoop->>CvReviewer: 重新评审
+        CvReviewer-->>CvImprovementLoop: 返回新的评审
+        alt 评分 >= 0.8
+            CvImprovementLoop-->>CandidateWorkflow: 返回最终简历
         end
     end
+    CandidateWorkflow-->>Main: 返回最终简历
+```
 
-    Main-->>Main: 返回最终优化的简历
+## 招聘团队工作流部分
 
-    Main->>Main: System.out.println("候选人工作流完成")
-
-    %% 第二部分：招聘团队组合工作流
-    Note over Main: ========== 招聘团队组合工作流 ==========
-
-    %% 构建评审Agents
-    Note over Main,AgenticSvc: 构建并行评审Agents
-
-    Main->>AgenticSvc: agentBuilder(HrCvReviewer.class)
-    AgenticSvc-->>Main: HrCvReviewer Builder
-    Main->>AgenticSvc: .chatModel(model).outputKey("hrReview").build()
-    AgenticSvc-->>Main: HrCvReviewer实例
-
-    Main->>AgenticSvc: agentBuilder(ManagerCvReviewer.class)
-    AgenticSvc-->>Main: ManagerCvReviewer Builder
-    Main->>AgenticSvc: .chatModel(model).outputKey("managerReview").build()
-    AgenticSvc-->>Main: ManagerCvReviewer实例
-
-    Main->>AgenticSvc: agentBuilder(TeamMemberCvReviewer.class)
-    AgenticSvc-->>Main: TeamMemberCvReviewer Builder
-    Main->>AgenticSvc: .chatModel(model).outputKey("teamMemberReview").build()
-    AgenticSvc-->>Main: TeamMemberCvReviewer实例
-
-    %% 构建决策Agents
-    Main->>AgenticSvc: agentBuilder(EmailAssistant.class)
-    AgenticSvc-->>Main: EmailAssistant Builder
-    Main->>AgenticSvc: .chatModel(model).tools(OrganizingTools).build()
-    AgenticSvc-->>Main: EmailAssistant实例
-
-    Main->>AgenticSvc: agentBuilder(InterviewOrganizer.class)
-    AgenticSvc-->>Main: InterviewOrganizer Builder
-    Main->>AgenticSvc: .chatModel(model).tools(OrganizingTools).build()
-    AgenticSvc-->>Main: InterviewOrganizer实例
-
-    %% 构建并行评审工作流
-    Note over Main,AgenticSvc: 构建并行评审工作流
-
-    Main->>AgenticSvc: parallelBuilder()
-    AgenticSvc-->>Main: Parallel Builder
-    Main->>AgenticSvc: .subAgents(hrCvReviewer, managerCvReviewer, teamMemberCvReviewer)
-    Main->>AgenticSvc: .executor(FixedThreadPool(3))
-    Main->>AgenticSvc: .outputKey("combinedCvReview")
-    Main->>AgenticSvc: .output(lambda).build()
-    AgenticSvc-->>Main: UntypedAgent (parallelReviewWorkflow)
-
-    %% 构建条件决策工作流
-    Note over Main,AgenticSvc: 构建条件决策工作流
-
-    Main->>AgenticSvc: conditionalBuilder()
-    AgenticSvc-->>Main: Conditional Builder
-    Main->>AgenticSvc: .subAgents(condition1, interviewOrganizer)
-    Main->>AgenticSvc: .subAgents(condition2, emailAssistant).build()
-    AgenticSvc-->>Main: UntypedAgent (decisionWorkflow)
-
-    %% 构建招聘团队工作流
-    Note over Main,AgenticSvc: 构建完整的招聘团队工作流
-
-    Main->>AgenticSvc: sequenceBuilder(HiringTeamWorkflow.class)
-    AgenticSvc-->>Main: Sequence Builder
-    Main->>AgenticSvc: .subAgents(parallelReviewWorkflow, decisionWorkflow).build()
-    AgenticSvc-->>Main: HiringTeamWorkflow实例
-
-    %% 执行招聘团队工作流
-    Note over Main,StringLoader: 加载招聘团队输入数据
-
-    Main->>StringLoader: loadFromResource("/documents/tailored_cv.txt")
-    StringLoader-->>Main: candidateCv
-
-    Main->>StringLoader: loadFromResource("/documents/candidate_contact.txt")
-    StringLoader-->>Main: candidateContact
-
-    Main->>StringLoader: loadFromResource("/documents/hr_requirements.txt")
-    StringLoader-->>Main: hrRequirements
-
-    Main->>StringLoader: loadFromResource("/documents/phone_interview_notes.txt")
-    StringLoader-->>Main: phoneInterviewNotes
-
-    Note over Main: 执行招聘团队工作流
-
-    Main->>Main: hiringTeamWorkflow.processApplication(...)
-
-    %% 招聘团队工作流内部执行
-    Note over Main: 招聘团队工作流内部执行流程
-
-    rect rgb(255, 230, 200)
-        Note right of Main: 1. 并行评审阶段
-        par HR评审
-            Main->>Main: hrCvReviewer.review(candidateCv) → hrReview
-        and 经理评审
-            Main->>Main: managerCvReviewer.review(candidateCv) → managerReview
-        and 团队成员评审
-            Main->>Main: teamMemberCvReviewer.review(candidateCv) → teamMemberReview
-        end
-
-        Note right of Main: 2. 合并评审结果
-        Main->>Main: 计算平均分 = (hrScore + managerScore + teamMemberScore)/3
-
-        Note right of Main: 3. 条件决策阶段
-        alt 平均分>=0.8
-            Main->>Main: interviewOrganizer.organizeInterview()
-            Note right of Main: 发送面试邀请
-        else 平均分<0.8
-            Main->>Main: emailAssistant.sendRejectionEmail()
-            Note right of Main: 发送拒绝邮件
-        end
+```mermaid
+sequenceDiagram
+    participant Main as 主程序
+    participant HiringTeamWorkflow as 招聘团队工作流
+    participant ParallelReview as 并行评审工作流
+    participant HRReviewer as HR评审员
+    participant ManagerReviewer as 经理评审员
+    participant TeamMemberReviewer as 团队成员评审员
+    participant DecisionWorkflow as 决策工作流
+    participant InterviewOrganizer as 面试组织者
+    participant EmailAssistant as 邮件助手
+    
+    Main->>HiringTeamWorkflow: invoke(候选人数据)
+    HiringTeamWorkflow->>ParallelReview: 启动并行评审
+    parallel
+        ParallelReview->>HRReviewer: HR评审
+        HRReviewer-->>ParallelReview: HR评审结果
+        
+        ParallelReview->>ManagerReviewer: 经理评审
+        ManagerReviewer-->>ParallelReview: 经理评审结果
+        
+        ParallelReview->>TeamMemberReviewer: 团队成员评审
+        TeamMemberReviewer-->>ParallelReview: 团队成员评审结果
     end
+    ParallelReview-->>HiringTeamWorkflow: 返回合并的评审结果
+    HiringTeamWorkflow->>DecisionWorkflow: 条件决策
+    alt 平均评分 >= 0.8
+        DecisionWorkflow->>InterviewOrganizer: 安排面试
+        InterviewOrganizer-->>DecisionWorkflow: 面试安排确认
+        DecisionWorkflow-->>HiringTeamWorkflow: 决策结果(邀请)
+    else 平均评分 < 0.8
+        DecisionWorkflow->>EmailAssistant: 发送拒绝邮件
+        EmailAssistant-->>DecisionWorkflow: 邮件发送确认
+        DecisionWorkflow-->>HiringTeamWorkflow: 决策结果(拒绝)
+    end
+    HiringTeamWorkflow-->>Main: 工作流完成
+```
 
-    Main->>Main: System.out.println("招聘团队工作流完成")
+## 整体复合工作流
+
+```mermaid
+sequenceDiagram
+    participant User as 用户/主程序
+    participant CandidateWF as 候选人工作流
+    participant HiringTeamWF as 招聘团队工作流
+    participant CVGen as 简历生成器
+    participant CVRevLoop as 简历评审循环
+    participant ParallelRev as 并行评审
+    participant CondDec as 条件决策
+    
+    User->>CandidateWF: 开始候选人流程
+    Note over CandidateWF: 包含简历生成、评审、循环改进
+    CandidateWF-->>User: 返回最终简历
+    User->>HiringTeamWF: 开始招聘团队流程
+    Note over HiringTeamWF: 包含并行评审和条件决策
+    HiringTeamWF-->>User: 完成招聘决策
+```

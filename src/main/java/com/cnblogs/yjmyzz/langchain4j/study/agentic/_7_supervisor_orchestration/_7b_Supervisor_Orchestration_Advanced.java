@@ -8,6 +8,7 @@ import com.cnblogs.yjmyzz.langchain4j.study.agentic._4_parallel_workflow.TeamMem
 import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.EmailAssistant;
 import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.InterviewOrganizer;
 import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.OrganizingTools;
+import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.RagProvider;
 import com.cnblogs.yjmyzz.langchain4j.study.util.StringLoader;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.scope.ResultWithAgenticScope;
@@ -38,6 +39,7 @@ public class _7b_Supervisor_Orchestration_Advanced {
     public static void main(String[] args) throws IOException {
         ConfigurableApplicationContext context = SpringApplication.run(AgentDesignPatternApplication.class, args);
         ChatModel model = context.getBean("ollamaChatModel", ChatModel.class);
+        RagProvider ragProvider = context.getBean("ragProvider", RagProvider.class);
 
         // 1. 定义子智能体
         HrCvReviewer hrReviewer = AgenticServices.agentBuilder(HrCvReviewer.class)
@@ -52,6 +54,7 @@ public class _7b_Supervisor_Orchestration_Advanced {
         InterviewOrganizer interviewOrganizer = AgenticServices.agentBuilder(InterviewOrganizer.class)
                 .chatModel(model)
                 .tools(new OrganizingTools())
+                .contentRetriever(ragProvider.loadHouseRulesRetriever())
                 .outputKey("response")
                 .build();
         EmailAssistant emailAssistant = AgenticServices.agentBuilder(EmailAssistant.class)
@@ -81,11 +84,11 @@ public class _7b_Supervisor_Orchestration_Advanced {
         String phoneInterviewNotes = StringLoader.loadFromResource("/documents/phone_interview_notes.txt");
 
         String request = "评估此候选人，并安排面试或发送拒绝邮件。\n"
-                + "候选人简历：\n" + candidateCv + "\n"
-                + "候选人联系方式：\n" + candidateContact + "\n"
-                + "职位描述：\n" + jobDescription + "\n"
-                + "HR要求：\n" + hrRequirements + "\n"
-                + "电话面试记录：\n" + phoneInterviewNotes;
+                + "候选人简历(candidateCv)：\n" + candidateCv + "\n"
+                + "候选人联系方式(candidateContact)：\n" + candidateContact + "\n"
+                + "职位描述(jobDescription)：\n" + jobDescription + "\n"
+                + "HR要求(hrRequirements)：\n" + hrRequirements + "\n"
+                + "电话面试记录(phoneInterviewNotes)：\n" + phoneInterviewNotes;
 
         // 4. 调用监督者
         long start = System.nanoTime();

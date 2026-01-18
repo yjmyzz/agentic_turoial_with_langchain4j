@@ -7,7 +7,7 @@ import dev.langchain4j.service.V;
 public interface CvGenerator {
     @UserMessage("""
             以下是我的个人生活和职业经历信息，
-            请将其整理成一份清晰、完整的简历。
+            请将其整理成一份清晰、完整的中文简历。
             
             注意事项：
             1. 不要编造任何事实

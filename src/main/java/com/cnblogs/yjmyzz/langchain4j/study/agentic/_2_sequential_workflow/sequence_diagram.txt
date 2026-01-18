@@ -1,77 +1,31 @@
+# 顺序工作流时序图
+
+```mermaid
 sequenceDiagram
-    participant Main as _2a_Sequential_Agent_Example.main()
-    participant SpringCtx as SpringApplication
-    participant ChatModel as OllamaChatModel
-    participant AgenticSvc as AgenticServices
-    participant CvGenBuilder as CvGenerator Builder
-    participant CvTailorBuilder as CvTailor Builder
-    participant SeqBuilder as Sequence Builder
-    participant UntypedAgent as tailoredCvGenerator
-    participant StringLoader as StringLoader
-    participant CvGenerator as CvGenerator Agent
-    participant CvTailor as CvTailor Agent
+    participant Main as 主程序(_2a_Sequential_Agent_Example)
+    participant CvGenerator as CvGenerator
+    participant CvTailor as CvTailor
+    participant Model as ChatModel
+    
+    Main->>CvGenerator: 创建CvGenerator实例
+    Main->>CvTailor: 创建CvTailor实例
+    Main->>Main: 构建顺序工作流(tailoredCvGenerator)
+    Main->>Main: 准备参数(lifeStory, instructions)
+    Main->>CvGenerator: 调用generateCv(lifeStory)
+    CvGenerator->>Model: 请求生成主简历
+    Model-->>CvGenerator: 返回主简历(masterCv)
+    CvGenerator-->>Main: 返回主简历(masterCv)
+    Main->>CvTailor: 调用tailorCv(masterCv, instructions)
+    CvTailor->>Model: 请求根据职位描述优化简历
+    Model-->>CvTailor: 返回定制简历(tailoredCv)
+    CvTailor-->>Main: 返回定制简历(tailoredCv)
+    Main->>Main: 打印最终简历
+```
 
-    Main->>SpringCtx: SpringApplication.run(AgentDesignPatternApplication.class, args)
-    SpringCtx-->>Main: ConfigurableApplicationContext
+## 交互说明
 
-    Main->>SpringCtx: getBean("ollamaChatModel", ChatModel.class)
-    SpringCtx-->>Main: ChatModel实例
-
-    Note over Main,AgenticSvc: 构建第一个Agent - CvGenerator
-    Main->>AgenticSvc: agentBuilder(CvGenerator.class)
-    AgenticSvc-->>Main: CvGenBuilder
-
-    Main->>CvGenBuilder: chatModel(model)
-    Main->>CvGenBuilder: outputKey("masterCv")
-    Main->>CvGenBuilder: build()
-    CvGenBuilder-->>Main: CvGenerator实例
-
-    Note over Main,AgenticSvc: 构建第二个Agent - CvTailor
-    Main->>AgenticSvc: agentBuilder(CvTailor.class)
-    AgenticSvc-->>Main: CvTailorBuilder
-
-    Main->>CvTailorBuilder: chatModel(model)
-    Main->>CvTailorBuilder: outputKey("tailoredCv")
-    Main->>CvTailorBuilder: build()
-    CvTailorBuilder-->>Main: CvTailor实例
-
-    Note over Main,AgenticSvc: 构建顺序工作流
-    Main->>AgenticSvc: sequenceBuilder()
-    AgenticSvc-->>Main: SeqBuilder
-
-    Main->>SeqBuilder: subAgents(cvGenerator, cvTailor)
-    Main->>SeqBuilder: outputKey("tailoredCv")
-    Main->>SeqBuilder: build()
-    SeqBuilder-->>Main: UntypedAgent (tailoredCvGenerator)
-
-    Note over Main,StringLoader: 加载输入数据
-    Main->>StringLoader: loadFromResource("/documents/user_life_story.txt")
-    StringLoader-->>Main: lifeStory
-
-    Main->>StringLoader: loadFromResource("/documents/job_description_backend.txt")
-    StringLoader-->>Main: jobDescription
-
-    Main->>Main: 构造instructions参数
-
-    Note over Main,UntypedAgent: 准备调用参数
-    Main->>Main: 创建Map<String, Object> arguments
-    Main->>Main: 添加"lifeStory"和"instructions"键值对
-
-    Note over Main,UntypedAgent: 执行顺序工作流
-    Main->>UntypedAgent: invoke(arguments)
-
-    Note over UntypedAgent,CvGenerator: 第一阶段 - CvGenerator执行
-    UntypedAgent->>CvGenerator: generateCv(lifeStory)
-    CvGenerator->>ChatModel: 调用LLM生成主简历
-    ChatModel-->>CvGenerator: 主简历(masterCv)
-    CvGenerator-->>UntypedAgent: 返回masterCv
-
-    Note over UntypedAgent,CvTailor: 第二阶段 - CvTailor执行
-    UntypedAgent->>CvTailor: tailorCv(masterCv, instructions)
-    CvTailor->>ChatModel: 调用LLM优化简历
-    ChatModel-->>CvTailor: 优化后的简历(tailoredCv)
-    CvTailor-->>UntypedAgent: 返回tailoredCv
-
-    UntypedAgent-->>Main: 返回最终优化的简历
-
-    Main->>Main: System.out.println打印结果
+1. 主程序首先创建CvGenerator和CvTailor两个Agent实例
+2. 使用sequenceBuilder将两个Agent连接成顺序工作流
+3. 顺序工作流首先调用CvGenerator生成主简历
+4. 然后将生成的主简历作为输入传递给CvTailor进行定制
+5. 最终返回经过职位描述优化后的定制简历

@@ -36,7 +36,7 @@ import java.util.concurrent.Executors;
  * by 菩提树下的杨过(yjmyzz.cnblogs.com)
  */
 @SpringBootApplication
-public class _6_Composed_Workflow_Example {
+public class _6_Composed_Workflow_Example2 {
 
     public static void main(String[] args) throws IOException {
         ConfigurableApplicationContext context = SpringApplication.run(AgentDesignPatternApplication.class, args);
@@ -169,11 +169,9 @@ public class _6_Composed_Workflow_Example {
                 .build();
 
         // 4. 创建完整的招聘团队工作流：并行评审 → 决策
-        UntypedAgent hiringTeamWorkflow = AgenticServices
-                .sequenceBuilder()
-                // 可以包含任意多个代理，顺序很重要
+        HiringTeamWorkflow hiringTeamWorkflow = AgenticServices
+                .sequenceBuilder(HiringTeamWorkflow.class)
                 .subAgents(parallelReviewWorkflow, decisionWorkflow)
-                .outputKey("workflowResult")
                 .build();
 
         // 5. 加载输入数据
@@ -181,21 +179,12 @@ public class _6_Composed_Workflow_Example {
         String hrRequirements = StringLoader.loadFromResource("/documents/hr_requirements.txt");
         String phoneInterviewNotes = StringLoader.loadFromResource("/documents/phone_interview_notes.txt");
 
-        // 将所有数据放入Map中便于访问
-        Map<String, Object> inputData = Map.of(
-                "candidateCv", candidateCv,
-                "candidateContact", candidateContact,
-                "hrRequirements", hrRequirements,
-                "phoneInterviewNotes", phoneInterviewNotes,
-                "jobDescription", jobDescription
-        );
 
         // 6. 执行招聘团队工作流
-        hiringTeamWorkflow.invoke(inputData);
+        hiringTeamWorkflow.processApplication(candidateCv, jobDescription, hrRequirements, phoneInterviewNotes, candidateContact);
         System.out.println("=== 招聘团队工作流完成 ===");
         System.out.println("并行评审完成并已做出决策");
 
-        // 注意：随着工作流变得更加复杂，请确保输入、中间和输出参数的名称
-        // 是唯一的，以避免在共享的AgenticScope中意外覆盖数据
+
     }
 }

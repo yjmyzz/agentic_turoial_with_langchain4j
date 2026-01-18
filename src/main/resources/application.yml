@@ -19,6 +19,7 @@ spring:
 ollama:
   base-url: http://localhost:11434
   model: deepseek-v3.1:671b-cloud
+#  model: qwen3:1.7b
   embedding-model: nomic-embed-text:latest
   timeout: 60
 
