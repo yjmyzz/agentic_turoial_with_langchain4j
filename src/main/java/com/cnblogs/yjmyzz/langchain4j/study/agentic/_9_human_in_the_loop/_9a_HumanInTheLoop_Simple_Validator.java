@@ -1,30 +1,49 @@
 package com.cnblogs.yjmyzz.langchain4j.study.agentic._9_human_in_the_loop;
 
 import com.cnblogs.yjmyzz.langchain4j.study.AgentDesignPatternApplication;
+import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.EmailAssistant;
+import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.InterviewOrganizer;
+import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.OrganizingTools;
+import com.cnblogs.yjmyzz.langchain4j.study.agentic._5_conditional_workflow.RagProvider;
 import com.cnblogs.yjmyzz.langchain4j.study.domain.CvReview;
+import com.cnblogs.yjmyzz.langchain4j.study.util.StringLoader;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.agentic.workflow.HumanInTheLoop;
 import dev.langchain4j.model.chat.ChatModel;
+import io.micrometer.common.util.StringUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Scanner;
 
 @SpringBootApplication
 public class _9a_HumanInTheLoop_Simple_Validator {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         ConfigurableApplicationContext context = SpringApplication.run(AgentDesignPatternApplication.class, args);
         ChatModel model = context.getBean("ollamaChatModel", ChatModel.class);
+        RagProvider ragProvider = context.getBean("ragProvider", RagProvider.class);
 
         // 3. 创建相关智能体
         HiringDecisionProposer decisionProposer = AgenticServices.agentBuilder(HiringDecisionProposer.class)
                 .chatModel(model)
                 .outputKey("modelDecision")
+                .build();
+
+        InterviewOrganizer interviewOrganizer = AgenticServices.agentBuilder(InterviewOrganizer.class)
+                .chatModel(model)
+                .tools(new OrganizingTools())
+                .contentRetriever(ragProvider.loadHouseRulesRetriever())
+                .build();
+
+        EmailAssistant emailAssistant = AgenticServices.agentBuilder(EmailAssistant.class)
+                .chatModel(model)
+                .tools(new OrganizingTools())
                 .build();
 
         // 2. 定义人工验证环节
@@ -65,6 +84,25 @@ public class _9a_HumanInTheLoop_Simple_Validator {
         System.out.println("\n=== 人工最终决定 ===");
         System.out.println("(邀请现场面试 (I), 拒绝 (R), 暂缓 (H))\n");
         System.out.println(finalDecision);
+
+        UntypedAgent candidateResponder = AgenticServices
+                .conditionalBuilder()
+                .subAgents(agenticScope -> finalDecision.contains("I"), interviewOrganizer)
+                .subAgents(agenticScope -> finalDecision.contains("R"), emailAssistant)
+                .subAgents(agenticScope -> finalDecision.contains("H"), new HoldOnAssist())
+                .build();
+
+        String candidateContact = StringLoader.loadFromResource("/documents/candidate_contact.txt");
+        String jobDescription = StringLoader.loadFromResource("/documents/job_description_backend.txt");
+
+
+        Map<String, Object> arguments = Map.of(
+                "candidateContact", candidateContact,
+                "jobDescription", jobDescription
+        );
+
+        // 6. 根据人工最终决定，进行下一步操作
+        candidateResponder.invoke(arguments);
 
         // 注意：人工参与和人工验证通常需要较长时间等待用户响应。
         // 在这种情况下，建议使用异步智能体，这样它们不会阻塞工作流的其余部分，

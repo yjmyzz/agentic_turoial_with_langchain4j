@@ -2,37 +2,60 @@ sequenceDiagram
     participant Main as Main Class (_9a_HumanInTheLoop_Simple_Validator)
     participant Context as Spring Context
     participant Model as ChatModel
+    participant RagProvider as RagProvider
     participant DecisionProposer as HiringDecisionProposer
-    participant HumanValidator as HumanInTheLoop Validator
-    participant Workflow as Hiring Decision Workflow
-    participant CvReview as CvReview Object
-    participant Human as Human User
+    participant HumanValidator as Human Validator
+    participant InterviewAgent as InterviewOrganizer
+    participant EmailAgent as EmailAssistant
+    participant HoldOnAgent as HoldOnAssist
+    participant ConditionalAgent as Conditional Agent
+    participant OrganizingTools as OrganizingTools
+    participant CandidateData as Candidate Data
 
     Main->>Context: Load Spring Application Context
-    Context-->>Main: Return ChatModel
+    Context-->>Main: Return ChatModel & RagProvider
     Main->>Model: Get Ollama Chat Model
+    Main->>RagProvider: Get Rag Provider
 
-    Main->>DecisionProposer: Build HiringDecisionProposer with outputKey "modelDecision"
-    Main->>HumanValidator: Build HumanInTheLoop with description "验证模型提出的招聘决策"
-    Note over HumanValidator: inputKey "modelDecision", outputKey "finalDecision"
-    HumanValidator->>HumanValidator: Define requestWriter (print decision options)
-    HumanValidator->>HumanValidator: Define responseReader (Scanner input)
+    Main->>DecisionProposer: Build HiringDecisionProposer with model
+    Main->>InterviewAgent: Build InterviewOrganizer with RagProvider & OrganizingTools
+    Main->>EmailAgent: Build EmailAssistant with OrganizingTools
+    Main->>HumanValidator: Build HumanInTheLoop validator
 
-    Main->>Workflow: Build sequence workflow with decisionProposer and humanValidator
-    Note over Workflow: OutputKey "finalDecision"
+    Main->>DecisionProposer: Prepare input with CvReview data
+    DecisionProposer-->>Main: Return model decision
 
-    Main->>CvReview: Create CvReview object with score 0.85 and review text
-    Main->>Workflow: Invoke workflow with cvReview input
+    Main->>HumanValidator: Request human validation
+    HumanValidator->>HumanValidator: Print AI suggestion to console
+    HumanValidator->>HumanValidator: Wait for user input (I/R/H)
+    HumanValidator-->>Main: Return final decision from human
 
-    Workflow->>DecisionProposer: Process input and generate model decision
-    DecisionProposer-->>Workflow: Return model decision
+    Main->>ConditionalAgent: Build conditional agent based on human decision
+    Note over ConditionalAgent: If decision contains 'I' -> InterviewOrganizer
+    Note over ConditionalAgent: If decision contains 'R' -> EmailAssistant
+    Note over ConditionalAgent: If decision contains 'H' -> HoldOnAssist
 
-    Workflow->>HumanValidator: Pass model decision to human validator
-    HumanValidator->>Human: Display AI hiring suggestion and prompt for decision
-    Note over HumanValidator, Human: Show options: Invite On-site Interview (I), Reject (R), Hold (H)
-    Human-->>HumanValidator: Enter decision (I/R/H)
+    Main->>CandidateData: Load candidate contact and job description
+    CandidateData-->>Main: Return candidateContact and jobDescription
 
-    HumanValidator-->>Workflow: Return final decision
-    Workflow-->>Main: Return final decision
-
-    Main->>Main: Print final decision result
+    Main->>ConditionalAgent: Invoke with arguments (candidateContact, jobDescription)
+    alt Final Decision is Invite (I)
+        ConditionalAgent->>InterviewAgent: Route to InterviewOrganizer
+        InterviewAgent->>OrganizingTools: Call tools to schedule interview
+        OrganizingTools->>OrganizingTools: getCurrentDate()
+        OrganizingTools->>OrganizingTools: getInvolvedEmployeesForInterview()
+        OrganizingTools->>OrganizingTools: createCalendarEntry()
+        OrganizingTools->>OrganizingTools: sendEmail()
+        OrganizingTools->>OrganizingTools: updateApplicationStatus()
+        InterviewAgent-->>ConditionalAgent: Return organization result
+    else Final Decision is Reject (R)
+        ConditionalAgent->>EmailAgent: Route to EmailAssistant
+        EmailAgent->>OrganizingTools: Call tools to send rejection email
+        OrganizingTools->>OrganizingTools: sendEmail()
+        OrganizingTools->>OrganizingTools: updateApplicationStatus()
+        EmailAgent-->>ConditionalAgent: Return email result
+    else Final Decision is Hold On (H)
+        ConditionalAgent->>HoldOnAgent: Route to HoldOnAssist
+        HoldOnAgent-->>ConditionalAgent: Return hold on message
+    end
+    ConditionalAgent-->>Main: Complete workflow
