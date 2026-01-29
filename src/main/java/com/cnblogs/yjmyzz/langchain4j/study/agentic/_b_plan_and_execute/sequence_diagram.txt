@@ -1,0 +1,105 @@
+sequenceDiagram
+    participant Main as PlanAndExecuteApplication (主程序)
+    participant SpringCtx as Spring Application Context
+    participant ChatModel as Ollama ChatModel
+    participant SampleTools as SampleTools (工具集)
+    participant Coordinator as Coordinator (协调器)
+    participant Planner as Planner (规划器)
+    participant Executor as Executor (执行器)
+    participant LLM as Language Model (大语言模型)
+
+    Main->>SpringCtx: 启动Spring应用上下文
+    SpringCtx-->>Main: 返回应用上下文实例
+
+    Main->>SpringCtx: 获取Ollama聊天模型Bean
+    SpringCtx-->>Main: 返回ChatModel实例
+
+    Main->>SpringCtx: 获取SampleTools工具Bean
+    SpringCtx-->>Main: 返回SampleTools实例
+
+    Main->>Coordinator: 创建协调器实例
+    activate Coordinator
+    Coordinator->>ChatModel: 绑定聊天模型到规划器
+    Coordinator->>Planner: 使用AgenticServices构建规划器
+    Coordinator->>ChatModel: 绑定聊天模型到执行器
+    Coordinator->>Executor: 使用AgenticServices构建执行器
+    Coordinator->>SampleTools: 注册工具集到执行器
+    deactivate Coordinator
+    Coordinator-->>Main: 返回构建完成的协调器实例
+
+    loop 批量处理每个任务
+        Main->>Main: 准备测试任务列表
+
+        loop 遍历每个测试任务
+            Main->>Coordinator: 执行任务 executeTask(task)
+            activate Coordinator
+
+            Coordinator->>Planner: 调用 createPlan(task) 进行任务规划
+            activate Planner
+
+            Planner->>LLM: 发送规划系统提示词和任务请求
+            activate LLM
+
+            Note over LLM: 规划器开始分析任务<br/>1. 理解任务需求<br/>2. 分解为执行步骤<br/>3. 选择合适工具<br/>4. 生成JSON格式计划
+
+            LLM-->>Planner: 返回JSON格式的执行计划
+            deactivate LLM
+            Planner-->>Coordinator: 返回规划结果
+            deactivate Planner
+
+            Coordinator->>Coordinator: 解析JSON计划为步骤列表
+            Coordinator->>Coordinator: 保存计划到结果中
+
+            loop 遍历每个计划步骤
+                Coordinator->>Executor: 调用 executeStep(stepInstruction) 执行步骤
+                activate Executor
+
+                Executor->>LLM: 发送执行系统提示词和步骤指令
+                activate LLM
+
+                Note over LLM: 执行器开始执行步骤<br/>1. 理解步骤要求<br/>2. 识别需要调用的工具<br/>3. 使用指定工具执行<br/>4. 返回执行结果
+
+                alt 需要调用工具
+                    LLM->>Executor: 请求调用指定工具
+                    Executor->>SampleTools: 调用相应工具方法
+                    activate SampleTools
+
+                    alt 数学计算
+                        SampleTools->>SampleTools: 执行加减乘除运算
+                    else 时间查询
+                        SampleTools->>SampleTools: 获取当前时间
+                    else 天气查询
+                        SampleTools->>SampleTools: 模拟天气查询
+                    else 几何计算
+                        SampleTools->>SampleTools: 计算面积/体积
+                    end
+
+                    SampleTools-->>Executor: 返回工具执行结果
+                    deactivate SampleTools
+                    Executor->>LLM: 将工具结果返回给模型
+                end
+
+                LLM->>LLM: 基于工具结果生成执行报告
+                LLM-->>Executor: 返回执行结果
+                deactivate LLM
+
+                Executor-->>Coordinator: 返回步骤执行结果
+                deactivate Executor
+
+                Coordinator->>Coordinator: 保存步骤结果到集合
+                Coordinator->>Coordinator: 更新上下文信息
+                Coordinator->>Main: 输出步骤执行进度
+            end
+
+            Coordinator-->>Main: 返回任务执行完整结果
+            deactivate Coordinator
+
+            Main->>Main: 输出任务完成总结
+            Main->>Main: 等待2秒避免请求过快
+        end
+    end
+
+    Main->>Coordinator: 打印上下文信息
+    Coordinator->>Main: 输出上下文内容
+
+    Note over Main: 程序执行完毕

@@ -43,8 +43,8 @@ public class OllamaConfig {
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaModel)
                 .timeout(Duration.ofSeconds(timeoutSeconds))
-                .logRequests(true)
-                .logResponses(true)
+//                .logRequests(true)
+//                .logResponses(true)
                 .build();
     }
 

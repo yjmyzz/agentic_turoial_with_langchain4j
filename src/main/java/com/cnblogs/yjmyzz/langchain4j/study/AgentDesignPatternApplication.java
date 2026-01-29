@@ -19,9 +19,7 @@ public class AgentDesignPatternApplication {
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(AgentDesignPatternApplication.class, args);
         ChatModel model = context.getBean("ollamaChatModel", ChatModel.class);
-
         promptChain(model);
-
     }
 
     static void promptChain(ChatModel model) {

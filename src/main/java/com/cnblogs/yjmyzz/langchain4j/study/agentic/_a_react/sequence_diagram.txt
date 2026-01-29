@@ -1,0 +1,70 @@
+sequenceDiagram
+    participant Main as ReActAgentApplication (主程序)
+    participant SpringCtx as Spring Application Context
+    participant ChatModel as Ollama ChatModel
+    participant SampleTools as SampleTools (工具集)
+    participant ReActAgent as ReActAssistant (智能体)
+    participant LLM as Language Model (大语言模型)
+
+    Main->>SpringCtx: 启动Spring应用上下文
+    SpringCtx-->>Main: 返回应用上下文实例
+
+    Main->>SpringCtx: 获取Ollama聊天模型Bean
+    SpringCtx-->>Main: 返回ChatModel实例
+
+    Main->>SpringCtx: 获取SampleTools工具Bean
+    SpringCtx-->>Main: 返回SampleTools实例
+
+    Main->>ReActAgent: 使用AgenticServices构建智能体
+    activate ReActAgent
+    ReActAgent->>ChatModel: 绑定聊天模型
+    ReActAgent->>SampleTools: 注册工具集
+    ReActAgent->>ReActAgent: 配置消息窗口内存(15条)
+    deactivate ReActAgent
+    ReActAgent-->>Main: 返回构建完成的智能体实例
+
+    loop 批量测试每个查询
+        Main->>Main: 准备测试问题列表
+
+        loop 遍历每个测试问题
+            Main->>ReActAgent: 发送查询请求 chat(query)
+            activate ReActAgent
+
+            ReActAgent->>LLM: 发送包含系统提示词和用户问题的请求
+            activate LLM
+
+            Note over LLM: 智能体开始ReAct推理过程<br/>1. 理解问题<br/>2. 判断是否需要工具<br/>3. 选择合适工具
+
+            alt 需要使用工具
+                LLM->>ReActAgent: 请求调用特定工具
+                ReActAgent->>SampleTools: 调用相应工具方法
+                activate SampleTools
+
+                alt 数学计算
+                    SampleTools->>SampleTools: 执行加减乘除运算
+                else 时间查询
+                    SampleTools->>SampleTools: 获取当前时间
+                else 天气查询
+                    SampleTools->>SampleTools: 模拟天气查询
+                else 几何计算
+                    SampleTools->>SampleTools: 计算面积/体积
+                end
+
+                SampleTools-->>ReActAgent: 返回工具执行结果
+                deactivate SampleTools
+                ReActAgent->>LLM: 将工具结果返回给模型
+            end
+
+            LLM->>LLM: 基于工具结果进行最终推理
+            LLM-->>ReActAgent: 返回最终答案
+            deactivate LLM
+
+            ReActAgent-->>Main: 返回处理结果
+            deactivate ReActAgent
+
+            Main->>Main: 输出问答结果到控制台
+            Main->>Main: 等待1秒避免请求过快
+        end
+    end
+
+    Note over Main: 程序执行完毕，关闭资源

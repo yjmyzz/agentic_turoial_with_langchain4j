@@ -13,7 +13,7 @@
 - **Ollama集成**: 支持本地大语言模型和嵌入模型
   - 聊天模型：默认使用 `deepseek-v3.1:671b-cloud`
   - 嵌入模型：默认使用 `nomic-embed-text:latest`
-- **9种Agent工作流模式**: 完整演示Agent设计模式的各种应用场景
+- **11种Agent工作流模式**: 完整演示Agent设计模式的各种应用场景
   - 基础Agent（Basic Agent）
   - 顺序工作流（Sequential Workflow）
   - 循环工作流（Loop Workflow）
@@ -23,7 +23,9 @@
   - 监督者编排（Supervisor Orchestration）
   - 非AI智能体（Non-AI Agents）
   - 人机协同决策（Human in the Loop）
-- **最新更新**: 2026年1月 - 新增异步条件工作流示例和人类记忆聊天机器人示例
+  - ReAct模式（Reasoning and Acting）
+  - PlanAndExecute模式（Plan and Execute）
+- **最新更新**: 2026年1月 - 新增异步条件工作流示例、人类记忆聊天机器人示例、ReAct模式示例和PlanAndExecute模式示例
 
 ## 📋 前置要求
 
@@ -377,6 +379,86 @@ UntypedAgent workflow = AgenticServices
     .build();
 ```
 
+### 10. ReAct模式（Reasoning and Acting）
+
+**示例文件**: `ReActAgentApplication.java`
+
+演示如何构建ReAct（推理与行动）模式的智能体，该模式允许智能体在解决问题时交替进行推理和行动。
+
+**功能**: 
+- 智能体接收用户问题
+- 分析问题是否需要工具协助
+- 如需工具，则调用相应工具获取信息
+- 基于工具结果给出最终答案
+
+**关键特性**:
+- 使用 `@SystemMessage` 定义推理步骤
+- 支持多种工具（数学计算、时间查询、天气查询、几何计算等）
+- 自动判断何时使用工具
+- 通过记忆管理保持对话上下文
+- 实现真正的推理-行动循环
+
+**运行示例**:
+```java
+ReActAssistant agent = AgenticServices
+    .agentBuilder(ReActAssistant.class)
+    .chatModel(model)
+    .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(15))
+    .tools(sampleTools)
+    .build();
+
+// 测试查询
+String response = agent.chat("计算半径为5的圆的面积");
+System.out.println(response); // 输出计算结果
+
+// 智能体将自动：
+// 1. 理解问题（需要计算圆面积）
+// 2. 识别需要使用计算工具
+// 3. 调用calculateCircleArea工具
+// 4. 基于工具结果返回最终答案
+```
+
+### 11. PlanAndExecute模式（Plan and Execute）
+
+**示例文件**: `PlanAndExecuteApplication.java`
+
+演示如何构建PlanAndExecute（规划与执行）模式的智能体，该模式将复杂的任务分解为两个主要阶段：规划（Planning）和执行（Executing）。
+
+**功能**: 
+- **规划阶段（Planning）**: 将用户任务分解为一系列具体的执行步骤
+- **执行阶段（Executing）**: 按顺序执行规划好的步骤
+- **协调器（Coordinator）**: 协调规划和执行过程，并管理上下文信息
+
+**关键特性**:
+- 使用`Planner`接口定义任务规划逻辑
+- 使用`Executor`接口定义任务执行逻辑
+- 通过`Coordinator`协调整个流程
+- 支持多步推理和工具调用
+- 维护执行上下文以跟踪任务进度
+- 提供任务执行统计信息（耗时、步骤数等）
+
+**运行示例**:
+```java
+// 创建协调器
+Coordinator coordinator = new Coordinator(model, sampleTools);
+
+// 执行任务
+Map<String, Object> result = coordinator.executeTask("计算 15 加上 27 等于多少？");
+
+// 结果包含任务详情、状态、执行时间、步骤数等信息
+System.out.println("任务: " + result.get("task"));
+System.out.println("状态: " + result.get("status"));
+System.out.println("耗时: " + result.get("duration"));
+```
+
+**工作流程**:
+1. 用户提交任务给协调器
+2. 协调器将任务交给规划器（Planner）
+3. 规划器生成任务执行计划（包含多个步骤）
+4. 协调器将计划交给执行器（Executor）
+5. 执行器按顺序执行每个步骤
+6. 执行完成后返回结果并更新上下文
+
 ## 📁 项目结构
 
 ```
@@ -434,6 +516,15 @@ src/
 │   │   │       ├── DecisionsReachedService.java
 │   │   │       ├── HiringDecisionProposer.java
 │   │   │       └── MeetingProposer.java
+│   │   └── _a_react/                 # ReAct模式示例
+│   │       ├── ReActAgentApplication.java
+│   │       ├── ReActAssistant.java
+│   │       └── SampleTools.java
+│   │   ├── _b_plan_and_execute/        # PlanAndExecute模式示例
+│   │   │   ├── PlanAndExecuteApplication.java
+│   │   │   ├── Planner.java
+│   │   │   ├── Executor.java
+│   │   │   └── Coordinator.java
 │   │   ├── domain/
 │   │   │   ├── Cv.java                          # 简历领域模型
 │   │   │   └── CvReview.java                    # 简历评审领域模型
@@ -597,6 +688,12 @@ java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._8_non_ai_a
 
 ```bash
 java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._9_human_in_the_loop._9a_HumanInTheLoop_Simple_Validator
+```
+
+### 运行PlanAndExecute模式示例
+
+```bash
+java -cp target/classes com.cnblogs.yjmyzz.langchain4j.study.agentic._b_plan_and_execute.PlanAndExecuteApplication
 ```
 
 ## 🔧 开发指南
@@ -769,6 +866,59 @@ Map<String, Object> initialState = Map.of("conversationHistory", history);
 Object result = agent.invoke(initialState);
 ```
 
+#### ReAct模式（Reasoning and Acting）
+ReAct模式是一种结合推理（Reasoning）和行动（Acting）的智能体架构，允许智能体在解决问题时交替进行思考和执行工具操作。
+
+```java
+// 定义ReAct智能体
+public interface ReActAssistant {
+    @SystemMessage("""
+            你是一个使用ReAct（Reasoning and Acting）模式的智能助手。
+            请按照以下步骤思考：
+            1. 理解用户的问题
+            2. 思考解决问题需要什么信息
+            3. 如果需要计算或查询，选择合适的工具
+            4. 使用工具获取结果
+            5. 基于结果给出最终答案
+            
+            请用中文思考和回答。
+            当使用工具时，明确说明你要使用的工具。
+            """)
+    @UserMessage("问：{{request}}")
+    @Agent("基于用户提供的问题进行思考和回答")
+    String chat(@V("request") String request);
+}
+
+// 创建工具类
+@Component("sampleTools")
+public class SampleTools {
+    @Tool("计算两个数的加法运算")
+    public String add(double a, double b) {
+        // 实现加法运算
+        return String.format("%.2f + %.2f = %.2f", a, b, a + b);
+    }
+    
+    @Tool("获取当前日期和时间")
+    public String getCurrentDateTime() {
+        // 获取当前时间
+        return LocalDateTime.now().format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        );
+    }
+}
+
+// 构建ReAct智能体
+ReActAssistant agent = AgenticServices
+    .agentBuilder(ReActAssistant.class)
+    .chatModel(model)
+    .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(15))
+    .tools(sampleTools)
+    .build();
+
+// 使用智能体处理查询
+String response = agent.chat("计算 15 加上 27 等于多少？");
+```
+
 ### 使用工具（Tools）
 
 Agent可以使用工具扩展功能：
@@ -872,6 +1022,13 @@ MyAgent agent = AgenticServices
    - Maven编译器插件设置为Java 25
    - Lombok为可选依赖，打包时会被排除
 
+14. **PlanAndExecute模式问题**
+   - 确保Planner和Executor接口定义正确
+   - 检查计划解析逻辑是否能正确解析JSON格式的计划
+   - 验证协调器（Coordinator）能否正确管理执行上下文
+   - 确认工具调用是否按计划步骤正确执行
+   - 检查执行结果是否正确反馈给协调器
+
 ## 📝 AgenticScope说明
 
 `AgenticScope` 是Agent工作流中的核心概念，用于：
@@ -944,6 +1101,7 @@ MyAgent agent = AgenticServices
 - LangChain4j官方团队提供的优秀框架和文档
 - Anthropic关于Agent设计模式的理论指导
 - Ollama提供的本地大语言模型运行环境
+- ReAct（Reasoning and Acting）模式的开创性研究
 
 ---
 
